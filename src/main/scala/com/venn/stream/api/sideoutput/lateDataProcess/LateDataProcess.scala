@@ -3,7 +3,7 @@ package com.venn.stream.api.sideoutput.lateDataProcess
 import java.io.File
 import java.text.SimpleDateFormat
 
-import com.venn.index.conf.Common
+import com.venn.common.Common
 import com.venn.source.TumblingEventTimeWindows
 import org.apache.flink.api.java.tuple.Tuple
 import org.apache.flink.api.scala._

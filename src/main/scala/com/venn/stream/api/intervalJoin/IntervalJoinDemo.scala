@@ -3,7 +3,7 @@ package com.venn.stream.api.intervalJoin
 import java.io.File
 import java.text.SimpleDateFormat
 
-import com.venn.index.conf.Common
+import com.venn.common.Common
 import com.venn.source.TumblingEventTimeWindows
 import org.apache.flink.api.common.functions.ReduceFunction
 import org.apache.flink.formats.json.JsonNodeDeserializationSchema

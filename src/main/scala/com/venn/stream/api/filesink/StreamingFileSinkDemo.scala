@@ -3,7 +3,7 @@ package com.venn.stream.api.filesink
 import java.io.File
 import java.text.SimpleDateFormat
 
-import com.venn.index.conf.Common
+import com.venn.common.Common
 import org.apache.flink.api.common.serialization.{BulkWriter, SimpleStringEncoder}
 import org.apache.flink.api.scala._
 import org.apache.flink.core.fs.Path

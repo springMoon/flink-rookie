@@ -1,8 +1,9 @@
 package com.venn.stream.api.broadcast
 
 import java.io.File
-import com.venn.flink.util.{StringUtil}
-import com.venn.index.conf.Common
+
+import com.venn.common.Common
+import com.venn.util.StringUtil
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.MapStateDescriptor
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo

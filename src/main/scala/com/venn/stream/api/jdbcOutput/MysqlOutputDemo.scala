@@ -2,7 +2,7 @@ package com.venn.stream.api.jdbcOutput
 
 import java.io.File
 
-import com.venn.index.conf.Common
+import com.venn.common.Common
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.state.filesystem.FsStateBackend

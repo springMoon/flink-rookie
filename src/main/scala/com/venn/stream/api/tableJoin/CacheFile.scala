@@ -1,10 +1,10 @@
 package com.venn.stream.api.tableJoin
 
-import java.io.{ File}
+import java.io.File
 import java.text.SimpleDateFormat
 
+import com.venn.common.Common
 import org.apache.flink.api.scala._
-import com.venn.index.conf.Common
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.formats.json.JsonNodeDeserializationSchema
