@@ -2,7 +2,8 @@ package com.venn.stream.api.filesink
 
 import java.io.File
 import java.text.SimpleDateFormat
-import com.venn.index.conf.Common
+
+import com.venn.common.Common
 import org.apache.flink.formats.json.JsonNodeDeserializationSchema
 import org.apache.flink.runtime.state.filesystem.FsStateBackend
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode

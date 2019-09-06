@@ -1,8 +1,9 @@
 package com.venn.stream.api.jdbcOutput
 
 import java.text.SimpleDateFormat
+
 import com.venn.common.Common
-import com.venn.flink.util.{MathUtil, StringUtil}
+import com.venn.util.{MathUtil, StringUtil}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 /**

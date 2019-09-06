@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.venn.common.Common
-import com.venn.flink.util.MathUtil
+import com.venn.util.MathUtil
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 import scala.util.parsing.json.JSONObject
