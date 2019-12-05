@@ -45,15 +45,16 @@ object ProcessWindowDemoForTrigger {
       .windowAll(TumblingProcessingTimeWindows.of(Time.seconds(60)))
       .trigger(CountAndTimeTrigger.of(10, Time.seconds(10)))
       .process(new ProcessAllWindowFunction[String, String, TimeWindow] {
-      override def process(context: Context, elements: Iterable[String], out: Collector[String]): Unit = {
-        var count = 0
+        override def process(context: Context, elements: Iterable[String], out: Collector[String]): Unit = {
 
-        elements.iterator.foreach(s => {
-          count += 1
-        })
-        logger.info("this trigger have : {} item", count)
-      }
-    })
+          var count = 0
+
+          elements.iterator.foreach(s => {
+            count += 1
+          })
+          logger.info("this trigger have : {} item", count)
+        }
+      })
 
     // execute job
     env.execute(this.getClass.getName)
