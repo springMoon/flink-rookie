@@ -37,28 +37,29 @@ object CepDemo {
       * 模式说明：
       * 1、start : 匹配 id 等于 42 的模式
       * 2、middle : start 紧跟着 middle  volume 的值 大于 10.0
-      * 3、end ： middle 后面宽松的跟着 end， name 等于 end
+      * 3、end ： middle 后面宽松的跟着 end， name 等于 end (不是紧跟着，中间可以插其他的数据)
       */
     val pattern = Pattern.begin[CepDemoEvent]("start").where(_.id.equals("42"))
       .next("middle").subtype(classOf[CepDemoEvent]).where(_.volume > 5.1)
+//      .next("middle").where(_.volume > 5.1)
       .followedBy("end").where(_.name == "end")
 
     val patternStream = CEP.pattern(input, pattern)
 
-    val result: DataStream[CepDemoEvent] = patternStream.process(
-      new PatternProcessFunction[CepDemoEvent, CepDemoEvent]() {
+    val result: DataStream[String] = patternStream.process(
+      new PatternProcessFunction[CepDemoEvent, String]() {
         override def processMatch(
                                    events: util.Map[String, util.List[CepDemoEvent]],
                                    ctx: PatternProcessFunction.Context,
-                                   out: Collector[CepDemoEvent]): Unit = {
+                                   out: Collector[String]): Unit = {
 
           val start = events.get("start")
           val middle = events.get("middle")
           val end = events.get("end")
           // list 是因为规则后面可以加次数
-          out.collect(start.get(0))
-          out.collect(middle.get(0))
-          out.collect(end.get(0))
+//          out.collect("start : " + start.get(0))
+          out.collect("middle : " + middle.get(0))
+          out.collect("end : " + end.get(0))
 
         }
       })
@@ -90,12 +91,16 @@ class CepDemoSourceFunction extends SourceFunction[String] {
       val volumn = MathUtil.random.nextDouble() * 10
       val name = if (MathUtil.random.nextBoolean()) "xx" else "end"
 
-      ctx.collect(id + "," + volumn + "," + name)
+      val message = id + "," + volumn + "," + name
+      logger.info(message)
+      ctx.collect(message)
 
       id += 1
       if (id > 100) {
         id = 1
       }
+
+      Thread.sleep(10)
 
     }
     logger.info("{} cancel", this.getClass.getName)
