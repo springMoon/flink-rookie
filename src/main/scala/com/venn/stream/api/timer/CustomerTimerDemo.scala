@@ -4,8 +4,9 @@ import java.io.File
 import java.sql.{Connection, DriverManager, PreparedStatement, SQLException}
 import java.util
 import java.util.{Timer, TimerTask}
-
+import org.apache.flink.api.scala._
 import com.venn.common.Common
+import com.venn.util.TwoStringSource
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.configuration.Configuration
