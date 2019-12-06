@@ -150,5 +150,7 @@
     <orderEntry type="library" name="Maven: org.apache.flink:flink-runtime-web_2.11:1.9.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.flink:flink-shaded-netty:4.1.32.Final-7.0" level="project" />
     <orderEntry type="library" name="Maven: org.javassist:javassist:3.19.0-GA" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.flink:flink-cep-scala_2.11:1.9.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.flink:flink-cep_2.11:1.9.0" level="project" />
   </component>
 </module>
