@@ -10,6 +10,7 @@ this package for cep demo
 刘博 Flink CEP 实战: 
     PPT : https://files.alicdn.com/tpsservice/94d409d9679d1b46034f7d00161d99a7.pdf
     视频 ： https://www.bilibili.com/video/av66073054/
+刘博 Apache Flink CEP 实战 ： https://mp.weixin.qq.com/s/4dQYr-RXKBRdrhu6Y5dZdw
 Flink-CEPplus 项目：https://github.com/ljygz/Flink-CEPplus (作者和 末日布孤单 应该是一个人)
 末日布孤单源 CEP 码解析：https://www.cnblogs.com/ljygz/p/11978386.html
 ```
