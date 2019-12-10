@@ -15,4 +15,13 @@ Flink-CEPplus 项目：https://github.com/ljygz/Flink-CEPplus (作者和 末日�
 末日布孤单源 CEP 码解析：https://www.cnblogs.com/ljygz/p/11978386.html
 ```
 
-## 
+## 匹配后跳过策略：
+```text
+模式： b+ c
+input : b1 b2 b3 c
+NO_SKIP ： b1 b2 b3 c / b2 b3 c / b3 c # 一次只跳过一个事件，就开始匹配
+SKIP_TO_NEXT : b1 b2 b3 c / b2 b3 c / b3 c # 调到下一个 开始事件（也就是 b）
+SKIP_PAST_LAST_EVENT : b1 b2 b3 c # 跳过所有匹配过的事件
+SKIP_TO_FIRST[b] : b1 b2 b3 c / b2 b3 c / b3 c # 跳到第一个b（如果 第一个就是 b，从这个 b 后面的第一个b 开始）？
+SKIP_TO_LAST[b] : b1 b2 b3 c / b3 c # 跳到最后一个b，如果模式里面没有连续的b， 应该是调到 c 的后一个事件 ？
+```
