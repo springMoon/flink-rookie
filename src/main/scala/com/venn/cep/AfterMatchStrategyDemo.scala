@@ -37,7 +37,7 @@ object AfterMatchStrategyDemo {
         val volume = arr(1).toInt
         val name = arr(2)
         CepDemoEvent(id, volume, name, arr(3).toInt)
-      })
+      }).setParallelism(1)
     //  Applying your pattern on a non-keyed stream will result in a job with parallelism equal to 1
     //      .keyBy(_.id)
 
