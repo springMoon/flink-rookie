@@ -25,7 +25,7 @@ object CurrentDayMaker {
   val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
 
   def main(args: Array[String]): Unit = {
-    val producer = new KafkaProducer[String, String](Common.getProp)
+    val producer = new KafkaProducer[String, String](Common.getProp(true))
     var i = 0;
     while (true) {
 

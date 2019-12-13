@@ -1,10 +1,12 @@
 package com.venn.cep
 
 import java.util
+
 import com.venn.common.Common
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.scala._
 import org.apache.flink.cep.functions.PatternProcessFunction
+import org.apache.flink.cep.nfa.aftermatch.AfterMatchSkipStrategy
 import org.apache.flink.cep.pattern.conditions.IterativeCondition
 import org.apache.flink.cep.scala.CEP
 import org.apache.flink.cep.scala.pattern.Pattern
@@ -16,7 +18,13 @@ import org.slf4j.LoggerFactory
 
 /**
   * Cep for after match strategy
-  * CEP : 模式匹配后的跳过策略
+  * CEP : 模式匹配后的跳过策略测试：
+  *
+  * NO_SKIP：
+  * SKIP_TO_NEXT：
+  * SKIP_PAST_LAST_EVENT：
+  * SKIP_TO_FIRST[b]：
+  * SKIP_TO_LAST[b]：
   *
   */
 object AfterMatchStrategyDemo {
@@ -25,6 +33,8 @@ object AfterMatchStrategyDemo {
   def main(args: Array[String]): Unit = {
 
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+
+    env.setParallelism(1)
     val topic = "match_strategy"
     val source = new FlinkKafkaConsumer[String](topic, new SimpleStringSchema(), Common.getProp)
 
@@ -34,9 +44,8 @@ object AfterMatchStrategyDemo {
         //        logger.info(str)
         val arr = str.split(",")
         val id = arr(0)
-        val volume = arr(1).toInt
-        val name = arr(2)
-        CepDemoEvent(id, volume, name, arr(3).toInt)
+        val name = arr(1)
+        CepDemoEvent(id, 0, name, 0)
       }).setParallelism(1)
     //  Applying your pattern on a non-keyed stream will result in a job with parallelism equal to 1
     //      .keyBy(_.id)
@@ -47,26 +56,27 @@ object AfterMatchStrategyDemo {
       *
       * 匹配后跳过策略： 默认从上次的开始事件后的下一个事件开始
       *
+      * NO_SKIP：default
+      * SKIP_TO_NEXT：
+      * SKIP_PAST_LAST_EVENT：
+      * SKIP_TO_FIRST[b]：
+      * SKIP_TO_LAST[b]：
+      *
       */
-    val pattern = Pattern.begin[CepDemoEvent]("first")
-      .next("second").where(new IterativeCondition[CepDemoEvent] {
-      override def filter(currentEvent: CepDemoEvent, context: IterativeCondition.Context[CepDemoEvent]): Boolean = {
-        // get last event
-        val firstList = context.getEventsForPattern("first").iterator()
-        var lastStart: CepDemoEvent = null
-        // get last from firstList, and get the last one
-        while (firstList.hasNext) {
-          lastStart = firstList.next()
-        }
-        if (currentEvent.volume > lastStart.volume) {
-          true
-        } else {
-          false
-        }
-      }
+    val noSkit = AfterMatchSkipStrategy.noSkip()
+    val pattern = Pattern.begin[CepDemoEvent]("first").where(event => {
+      event.name.equals("a")
     })
-      // always remember add within, it will reduce the state usage
-      .within(Time.minutes(5 * 60 * 1000))
+      //      .timesOrMore(1)
+      .next("second").where(event => {
+      event.name.equals("a")
+    })
+      .next("third").where(event => {
+      event.name.equals("b")
+    })
+
+    // always remember add within, it will reduce the state usage
+    //      .within(Time.minutes(5 * 60 * 1000))
 
     val patternStream = CEP.pattern(input, pattern)
 
@@ -79,8 +89,8 @@ object AfterMatchStrategyDemo {
           // get the change
           val first = events.get("first").get(0)
           val second = events.get("second").get(0)
-          val change = second.volume - first.volume
-          out.collect("from : " + first.id + ", to " + second.id + ", change : " + change)
+          val third = events.get("third").get(0)
+          out.collect("first : " + first + ", first " + second + ", third : " + third)
         }
 
       })
