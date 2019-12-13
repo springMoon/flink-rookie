@@ -1,5 +1,7 @@
 package com.venn.common;
 
+import scala.Boolean;
+
 import java.util.Properties;
 
 /**
@@ -31,5 +33,22 @@ public class Common {
         }
         return prop;
     }
+
+    public static Properties getProp(boolean flag){
+        if(prop == null){
+            prop = new Properties();
+            prop.put("bootstrap.servers", BROKER_LIST);
+            prop.put("request.required.acks", "-1");
+            prop.put("auto.offset.reset", "latest");
+            prop.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+            prop.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+            prop.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+            prop.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+            prop.put("group.id", "venn");
+            prop.put("client.id", "venn");
+        }
+        return prop;
+    }
+
 
 }
