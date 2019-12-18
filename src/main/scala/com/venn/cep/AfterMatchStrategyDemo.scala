@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory
   * SKIP_TO_FIRST[b]：
   * SKIP_TO_LAST[b]：
   *
-  * Command : 
+  * Command :
   *
   */
 object AfterMatchStrategyDemo {
@@ -40,7 +40,6 @@ object AfterMatchStrategyDemo {
     val topic = "match_strategy"
     val source = new FlinkKafkaConsumer[String](topic, new SimpleStringSchema(), Common.getProp)
 
-    // 输入 id, volumn, name 三个字段的数据
     val input = env.addSource(source)
       .map(str => {
         //        logger.info(str)
