@@ -74,9 +74,8 @@ object WordCountDistinct {
             val word = elementsIterator.next()._2
             wordState.put(word, null)
           }
-          pv += pvCount.value()
           // add current
-          pvCount.update(pv)
+          pvCount.update(pvCount.value() + pv)
           var count: Long = 0
           val wordIterator = wordState.keys().iterator()
           while (wordIterator.hasNext) {
@@ -85,7 +84,8 @@ object WordCountDistinct {
           }
           // uv
           out.collect((key.getField(0), "uv", count))
-          out.collect(key.getField(0), "pv", pv)
+          // fix bug: collect pvCount value in state
+          out.collect(key.getField(0), "pv", pvCount.value())
 
         }
       })
