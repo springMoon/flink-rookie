@@ -74,6 +74,7 @@ object AfterMatchStrategyDemo {
       .next("third").where(event => {
       event.name.equals("b")
     })
+//      .notNext()
 
     // always remember add within, it will reduce the state usage
     //      .within(Time.minutes(5 * 60 * 1000))
