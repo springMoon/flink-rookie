@@ -41,7 +41,8 @@ object CepDemo {
       * 模式说明：
       * 1、start : 匹配 id 等于 42 的模式
       * 2、middle : start 紧跟着 middle  volume 的值 大于 10.0,
-      * subtype 该模式的多个条件，必须都满足？
+      * subtype : 可以通过pattern.subtype（subClass）方法将接受事件的类型限制为初始事件类型的子类型（此处为Event）?所以下面的用户时无用的
+      *     就是仅处理当前数据类型的子类型
       * 3、end ： middle 后面宽松的跟着 end， name 等于 end (不是紧跟着，中间可以插其他的数据)
       */
     val pattern = Pattern.begin[CepDemoEvent]("start").where(_.id.equals("42"))
