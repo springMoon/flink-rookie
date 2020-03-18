@@ -35,6 +35,6 @@ CREATE TABLE user_log_sink (
 );
 
 --insert
-INSERT INTO user_log_sink(dt, pv, uv)
+INSERT INTO user_log_sink
 SELECT user_id, item_id, category_id, behavior, ts
 FROM user_log;
