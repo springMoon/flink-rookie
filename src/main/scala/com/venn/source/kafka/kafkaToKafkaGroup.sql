@@ -14,6 +14,7 @@ CREATE TABLE user_log(
     'connector.properties.zookeeper.connect' = 'venn:2181',
     'connector.properties.bootstrap.servers' = 'venn:9092',
     'connector.startup-mode' = 'earliest-offset',
+    'update-mode' = 'upsert',
     'format.type' = 'json'
 );
 
