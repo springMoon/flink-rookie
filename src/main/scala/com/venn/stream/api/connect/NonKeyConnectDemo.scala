@@ -19,6 +19,12 @@ import org.slf4j.LoggerFactory
 
 /**
   * non keyed connect demo
+  * 问题：
+  *   1、两个 non keyed 流 connect 的时候，数据是怎么分配的（并发：1,2,3）（并发不同的数据，数据怎么分，随机分配吗？太傻了吧）
+  *   2、keyed 流 connect non keyed 流 的时候，数据是怎么分配的
+  *   3、non keyed 流 connect keyed 流 的时候，数据是怎么分配的
+  *   4、两个 keyed 流 connect 的时候，数据是怎么分配的
+  *       两个流的 keyBy 都是对 CoProcessFunction 的并发做的分区，所以相同 key 的数据一定会发到一起
   */
 object NonKeyConnectDemo {
 
