@@ -1,6 +1,6 @@
 package com.venn.flink.asyncio;
 
-import com.alibaba.fastjson.JSON;
+import com.google.gson.Gson;
 import com.venn.common.Common;
 import org.apache.flink.formats.json.JsonNodeDeserializationSchema;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 
 public class AsyncMysqlRequest {
+
 
     public static void main(String[] args) throws Exception {
 
@@ -33,12 +34,12 @@ public class AsyncMysqlRequest {
                     }
                 })
                 .map(value -> {
-            String id = value.get("id").asText();
-            String username = value.get("username").asText();
-            String password = value.get("password").asText();
+                    String id = value.get("id").asText();
+                    String username = value.get("username").asText();
+                    String password = value.get("password").asText();
 
-            return new AsyncUser(id, username, password);
-        });
+                    return new AsyncUser(id, username, password);
+                });
         // 异步IO 获取mysql数据, timeout 时间 1s，容量 100（超过100个请求，会反压上游节点）
         DataStream async = AsyncDataStream
                 .unorderedWait(input,
@@ -48,7 +49,7 @@ public class AsyncMysqlRequest {
                         10);
 
         async.map(user -> {
-            return JSON.toJSON(user).toString();
+            return new Gson().toJson(user).toString();
         })
                 .print();
 
