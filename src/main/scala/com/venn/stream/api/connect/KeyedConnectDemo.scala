@@ -1,6 +1,6 @@
 package com.venn.stream.api.connect
 
-import java.io.File
+import java.util
 
 import com.venn.common.Common
 import com.venn.util.StringUtil
@@ -8,91 +8,109 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.{MapState, MapStateDescriptor}
 import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.runtime.state.filesystem.FsStateBackend
-import org.apache.flink.streaming.api.functions.co.{CoProcessFunction}
+import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.{CheckpointingMode, TimeCharacteristic}
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
+import org.apache.flink.streaming.api.TimeCharacteristic
+import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaProducer}
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 
 /**
   * non keyed connect demo
   * 问题：
-  *   1、两个 non keyed 流 connect 的时候，数据是怎么分配的（并发：1,2,3）（并发不同的数据，数据怎么分，随机分配吗？太傻了吧）
-  *   2、keyed 流 connect non keyed 流 的时候，数据是怎么分配的
-  *   3、non keyed 流 connect keyed 流 的时候，数据是怎么分配的
-  *   4、两个 keyed 流 connect 的时候，数据是怎么分配的
-  *       两个流的 keyBy 都是对 CoProcessFunction 的并发做的分区，所以相同 key 的数据一定会发到一起
+  * 1、两个 non keyed 流 connect 的时候，数据是怎么分配的（并发：1,2,3）（并发不同的数据，数据怎么分，随机分配吗？太傻了吧）
+  * 2、keyed 流 connect non keyed 流 的时候，数据是怎么分配的
+  * 3、non keyed 流 connect keyed 流 的时候，数据是怎么分配的
+  * 4、两个 keyed 流 connect 的时候，数据是怎么分配的
+  * 两个流的 keyBy 都是对 CoProcessFunction 的并发做的分区，所以相同 key 的数据一定会发到一起
   */
-object NonKeyConnectDemo {
+object KeyedConnectDemo {
 
   val logger = LoggerFactory.getLogger(NonKeyConnectDemo.getClass)
 
   def main(args: Array[String]): Unit = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
-    if ("/".equals(File.separator)) {
+    env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime)
+    /*if ("/".equals(File.separator)) {
       val backend = new FsStateBackend(Common.CHECK_POINT_DATA_DIR, true)
       env.setStateBackend(backend)
       env.enableCheckpointing(10 * 1000, CheckpointingMode.EXACTLY_ONCE)
     } else {
       env.setMaxParallelism(1)
       env.setParallelism(1)
-    }
+    }*/
+    env.setParallelism(4)
     // 配置更新流
     val config = new FlinkKafkaConsumer[String]("dynamic_config", new SimpleStringSchema, Common.getProp)
 
     val configStream = env
       .addSource(config)
-      // 测试 keyed 或 non keyed stream connect 的区别
-      //      .keyBy(_.split(",")(0))
-      .setParallelism(1)
       .name("configStream")
+      // 测试 keyed 或 non keyed stream connect 的区别
+//      .keyBy(_.split(",")(0))
 
     val input = env.addSource(new RadomSourceFunction)
-      .setParallelism(4)
       .name("radomFunction")
-      //      .keyBy(_.split(",")(0))
-      .connect(configStream)
-      .process(new CoProcessFunction[String, String, String] {
+      .map(str => str)
+      .setParallelism(4)
+//      .keyBy(_.split(",")(0))
 
+
+    val stream = input.connect(configStream)
+      .process(new CoProcessFunction[String, String, String] {
         var mapState: MapState[String, String] = _
 
         override def open(parameters: Configuration): Unit = {
+          // thinking broken, if use keyed state, must keyby upstream
+          // Keyed state can only be used on a 'keyed stream', i.e., after a 'keyBy()' operation.
           mapState = getRuntimeContext.getMapState(new MapStateDescriptor[String, String]("mapState", classOf[String], classOf[String]))
+
+
         }
 
         override def processElement1(element: String, context: CoProcessFunction[String, String, String]#Context, out: Collector[String]): Unit = {
-          // 解析三位城市编码，根据广播状态对应的map，转码为城市对应中文
-          //          println(value)
+          // checkouk map keys
+          val it = mapState.keys().iterator()
+          var size = 0
+          while (it.hasNext) {
+            val key = it.next()
+            size += 1
+          }
+          //          println("keys size : " + size)
+
           val citeInfo = element.split(",")
           val code = citeInfo(0)
           var va = mapState.get(code)
+          //          var va = map.get(code)
           // 不能转码的数据默认输出 中国(code=xxx)
           if (va == null) {
             va = "中国(code=" + code + ")";
           } else {
             va = va + "(code=" + code + ")"
           }
+          //          println(getRuntimeContext.getIndexOfThisSubtask + ", " + va)
           out.collect(va + "," + citeInfo(1))
         }
 
         override def processElement2(element: String, context: CoProcessFunction[String, String, String]#Context, collector: Collector[String]): Unit = {
 
+          println(getRuntimeContext.getIndexOfThisSubtask + ", " + element)
           val param = element.split(",")
           // update mapState
           mapState.put(param(0), param(1))
         }
 
         override def close(): Unit = {
-          mapState.clear()
+                    mapState.clear()
         }
-      })
-    input.print()
+      }).setParallelism(4)
+    val sink = new FlinkKafkaProducer[String]("non_key_connect_demo", new SimpleStringSchema(), Common.getProp)
+    //    stream.print()
 
-    env.execute("BroadCastDemo")
+    //      .addSink(sink)
+
+    env.execute("KeyedConnectDemo")
   }
 }
 

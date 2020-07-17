@@ -1,6 +1,6 @@
 package com.venn.flink.asyncio;
 
-import com.alibaba.fastjson.JSON;
+import com.google.gson.Gson;
 import com.venn.common.Common;
 import org.apache.flink.formats.json.JsonNodeDeserializationSchema;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
@@ -32,9 +32,9 @@ public class AsyncHbaseRequest {
 
         async.map(user -> {
 
-            return JSON.toJSON(user).toString();
+            return new Gson().toJson(user).toString();
         })
-        .print();
+                .print();
 
         env.execute("asyncForHbase");
 
