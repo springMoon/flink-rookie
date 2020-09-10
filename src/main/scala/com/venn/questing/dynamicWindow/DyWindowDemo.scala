@@ -41,7 +41,6 @@ object DyWindowDemo {
     val commandStream = env.addSource(commandSource)
       .flatMap(new RichFlatMapFunction[String, Command] {
         var gson: Gson = _
-
         override def open(parameters: Configuration): Unit = {
           gson = new Gson()
         }
@@ -128,8 +127,8 @@ object DyWindowDemo {
     val sumStream = connectStream
       .keyBy(_._1.attr)
       .window(DynamicTumblingEventTimeWindows.of())
-      .process(new DyProcessWindowFunction("sum"))
-      .print("sum")
+      .process(new DyProcessWindowFunction())
+      .print("result:")
 
     env.execute("DyWindowDemo")
   }
