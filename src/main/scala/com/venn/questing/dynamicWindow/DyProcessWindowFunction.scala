@@ -10,7 +10,7 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 
-class DyProcessWindowFunction(oper: String) extends ProcessWindowFunction[(DataEntity, Command), String, String, TimeWindow] {
+class DyProcessWindowFunction() extends ProcessWindowFunction[(DataEntity, Command), String, String, TimeWindow] {
 
   val logger = LoggerFactory.getLogger("DyProcessWindowFunction")
   var gson: Gson = _
