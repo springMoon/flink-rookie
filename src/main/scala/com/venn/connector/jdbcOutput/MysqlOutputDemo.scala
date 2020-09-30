@@ -1,4 +1,4 @@
-package com.venn.stream.api.jdbcOutput
+package com.venn.connector.jdbcOutput
 
 import java.io.File
 

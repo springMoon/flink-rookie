@@ -1,4 +1,4 @@
-package com.venn.stream.api.filesink
+package com.venn.connector.filesink
 
 import java.text.SimpleDateFormat
 import java.util.Calendar

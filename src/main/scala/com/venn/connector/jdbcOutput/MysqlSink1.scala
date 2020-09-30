@@ -1,13 +1,13 @@
-package com.venn.stream.api.jdbcOutput
+package com.venn.connector.jdbcOutput
 
 import java.sql.{Connection, DriverManager, PreparedStatement, SQLException}
+import org.apache.flink.api.common.io.OutputFormat
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
 import org.slf4j.{Logger, LoggerFactory}
 
-class MysqlSink extends RichSinkFunction[User] {
+class MysqlSink1 extends OutputFormat[User]{
 
-  val logger: Logger = LoggerFactory.getLogger("MysqlSink")
+  val logger: Logger = LoggerFactory.getLogger("MysqlSink1")
   var conn: Connection = _
   var ps: PreparedStatement = _
   val jdbcUrl = "jdbc:mysql://192.168.229.128:3306?useSSL=false&allowPublicKeyRetrieval=true"
@@ -15,8 +15,11 @@ class MysqlSink extends RichSinkFunction[User] {
   val password = "123456"
   val driverName = "com.mysql.jdbc.Driver"
 
-  override def open(parameters: Configuration): Unit = {
+  override def configure(parameters: Configuration): Unit = {
+    // not need
+  }
 
+  override def open(taskNumber: Int, numTasks: Int): Unit = {
     Class.forName(driverName)
     try {
       Class.forName(driverName)
@@ -32,12 +35,8 @@ class MysqlSink extends RichSinkFunction[User] {
     }
   }
 
-  /**
-    * 吞吐量不够话，可以将数据暂存在状态中，批量提交的方式提高吞吐量（如果oom，可能就是数据量太大，资源没有及时释放导致的）
-    * @param user
-    * @param context
-    */
-  override def invoke(user: User, context: SinkFunction.Context[_]): Unit = {
+  override def writeRecord(user: User): Unit = {
+
     println("get user : " + user.toString)
     ps = conn.prepareStatement("insert into async.user(username, password, sex, phone) values(?,?,?,?)")
     ps.setString(1, user.username)
@@ -49,9 +48,8 @@ class MysqlSink extends RichSinkFunction[User] {
     conn.commit()
   }
 
-
-
   override def close(): Unit = {
+
     if (conn != null){
       conn.commit()
       conn.close()
