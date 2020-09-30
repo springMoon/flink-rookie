@@ -1,4 +1,4 @@
-package com.venn.stream.api.filesink
+package com.venn.connector.filesink
 
 import java.io.File
 import org.apache.flink.streaming.connectors.fs.Clock
