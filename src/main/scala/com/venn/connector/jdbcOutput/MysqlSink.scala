@@ -32,12 +32,7 @@ class MysqlSink extends RichSinkFunction[User] {
     }
   }
 
-  /**
-    * 吞吐量不够话，可以将数据暂存在状态中，批量提交的方式提高吞吐量（如果oom，可能就是数据量太大，资源没有及时释放导致的）
-    * @param user
-    * @param context
-    */
-  override def invoke(user: User, context: SinkFunction.Context[_]): Unit = {
+  override def invoke(user: User, context: SinkFunction.Context): Unit = {
     println("get user : " + user.toString)
     ps = conn.prepareStatement("insert into async.user(username, password, sex, phone) values(?,?,?,?)")
     ps.setString(1, user.username)
@@ -49,10 +44,25 @@ class MysqlSink extends RichSinkFunction[User] {
     conn.commit()
   }
 
+  /**
+   * 吞吐量不够话，可以将数据暂存在状态中，批量提交的方式提高吞吐量（如果oom，可能就是数据量太大，资源没有及时释放导致的）
+   *
+   */
+  //  override def invoke(user: User, context: SinkFunction.Context[_]): Unit = {
+  //    println("get user : " + user.toString)
+  //    ps = conn.prepareStatement("insert into async.user(username, password, sex, phone) values(?,?,?,?)")
+  //    ps.setString(1, user.username)
+  //    ps.setString(2, user.password)
+  //    ps.setInt(3, user.sex)
+  //    ps.setString(4, user.phone)
+  //
+  //    ps.execute()
+  //    conn.commit()
+  //  }
 
 
   override def close(): Unit = {
-    if (conn != null){
+    if (conn != null) {
       conn.commit()
       conn.close()
     }
