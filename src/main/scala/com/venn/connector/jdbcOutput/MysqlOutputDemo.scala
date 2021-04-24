@@ -13,8 +13,8 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.flink.util.Collector
 
 /**
-  * 侧边输出：This operation can be useful when you want to split a stream of data
-  */
+ * 侧边输出：This operation can be useful when you want to split a stream of data
+ */
 object MysqlOutputDemo {
 
   def main(args: Array[String]): Unit = {
@@ -32,11 +32,11 @@ object MysqlOutputDemo {
     val source = new FlinkKafkaConsumer[String]("mysql_output", new SimpleStringSchema, Common.getProp)
     source.setStartFromLatest()
     env.addSource(source)
-        .map(li => {
-          val tmp = li.split(",")
-          new User(tmp(0), tmp(1), tmp(2)toInt, tmp(3))
-        })
-//        .addSink(new MysqlSink1)
+      .map(li => {
+        val tmp = li.split(",")
+        new User(tmp(0), tmp(1), tmp(2) toInt, tmp(3))
+      })
+      //        .addSink(new MysqlSink1)
       .writeUsingOutputFormat(new MysqlSink1)
 
     env.execute("msqlOutput")

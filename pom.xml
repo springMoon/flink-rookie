@@ -9,7 +9,7 @@
     <version>1.0</version>
 
     <properties>
-        <flink.version>1.11.2</flink.version>
+        <flink.version>1.12.0</flink.version>
         <scala.binary.version>2.11</scala.binary.version>
         <hadoop.version>2.7.7</hadoop.version>
         <elasticsearch.version>7.2.0</elasticsearch.version>
@@ -30,11 +30,11 @@
             <artifactId>flink-streaming-scala_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-twitter_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
-        </dependency>
+        </dependency>-->
         <!--kafka-->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -48,11 +48,11 @@
         </dependency>
         <!--<dependency>
            hdfs-->
-        <dependency>
+        <!--<dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-filesystem_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs</artifactId>
@@ -131,16 +131,16 @@
             <version>${flink.version}</version>
         </dependency>
         <!-- cep-->
-        <dependency>
+        <!--<dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-cep_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
-        </dependency>
-        <dependency>
+        </dependency>-->
+        <!--<dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-cep-scala_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
-        </dependency>
+        </dependency>-->
         <!--scala http -->
         <dependency>
             <groupId>org.scalaj</groupId>
@@ -158,7 +158,6 @@
             <artifactId>flink-connector-elasticsearch7_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
         </dependency>
-        <!--flink csv format-->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-csv</artifactId>
@@ -167,7 +166,7 @@
         <!--hive -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-hbase_${scala.binary.version}</artifactId>
+            <artifactId>flink-connector-hbase-2.2_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
         </dependency>
         <dependency>
@@ -193,16 +192,6 @@
 
     <build>
         <plugins>
-
-            <!-- Scala Code Style, most of the configuration done via plugin management -->
-            <plugin>
-                <groupId>org.scalastyle</groupId>
-                <artifactId>scalastyle-maven-plugin</artifactId>
-                <configuration>
-                    <configLocation>${project.basedir}/resource/scalastyle-config.xml</configLocation>
-                </configuration>
-            </plugin>
-
 
             <!-- Scala Compiler -->
             <plugin>
