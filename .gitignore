@@ -7,3 +7,4 @@ target/
 .idea/misc.xml
 
 *.iml
+flink-rookie.iml
