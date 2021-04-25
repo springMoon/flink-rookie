@@ -26,7 +26,6 @@ object WordCountDistinct {
 
   def main(args: Array[String]): Unit = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
-    env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime)
     if ("/".equals(File.separator)) {
       val backend = new FsStateBackend(Common.CHECK_POINT_DATA_DIR, true)
       env.setStateBackend(backend)
