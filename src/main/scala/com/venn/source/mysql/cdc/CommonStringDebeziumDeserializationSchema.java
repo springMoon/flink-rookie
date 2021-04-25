@@ -1,29 +1,29 @@
 package com.venn.source.mysql.cdc;
 
 import com.alibaba.ververica.cdc.debezium.DebeziumDeserializationSchema;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.util.Collector;
-import org.apache.kafka.connect.data.ConnectSchema;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 
-public class MyStringDebeziumDeserializationSchema implements DebeziumDeserializationSchema<String> {
+/**
+ * deserialize debezium format binlog
+ */
+public class CommonStringDebeziumDeserializationSchema implements DebeziumDeserializationSchema<String> {
 
     private String host;
     private int port;
 
 
-    public MyStringDebeziumDeserializationSchema(String host, int port) {
+    public CommonStringDebeziumDeserializationSchema(String host, int port) {
         this.host = host;
         this.port = port;
     }
 
-    public void deserialize(SourceRecord record, Collector<String> out) throws Exception {
+    public void deserialize(SourceRecord record, Collector<String> out) {
         JsonObject jsonObject = new JsonObject();
 
         jsonObject.addProperty("host", host);
@@ -77,8 +77,8 @@ public class MyStringDebeziumDeserializationSchema implements DebeziumDeserializ
                     break;
                 case BYTES:
                     // json ignore byte column
-//                    byte[] resultByte = after.getBytes(field.name());
-//                    jo.addProperty(field.name(), String.valueOf(resultByte));
+                    // byte[] resultByte = after.getBytes(field.name());
+                    // jo.addProperty(field.name(), String.valueOf(resultByte));
                     break;
                 case STRING:
                     String resultStr = after.getString(field.name());
