@@ -17,6 +17,7 @@ public class MySqlBinlogSourceExample {
                 .databaseList("venn") // monitor all tables under inventory database
                 .username("root")
                 .password("123456")
+                // 自定义 解析器，讲数据解析成 json
                 .deserializer(new MyStringDebeziumDeserializationSchema("localhost", 3306))
                 .build();
 
@@ -25,6 +26,7 @@ public class MySqlBinlogSourceExample {
         env
                 .addSource(sourceFunction)
                 .map(str -> str)
+                // 讲数据发送到不同的 topic
                 .addSink(new CommonKafkaSink())
                 .setParallelism(1);
 
