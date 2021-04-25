@@ -30,14 +30,13 @@ public class MyStringDebeziumDeserializationSchema implements DebeziumDeserializ
         jsonObject.addProperty("port", port);
         jsonObject.addProperty("file", (String) record.sourceOffset().get("file"));
         jsonObject.addProperty("pos", (Long) record.sourceOffset().get("pos"));
-        jsonObject.addProperty("ts_sc", (Long) record.sourceOffset().get("ts_sec"));
+        jsonObject.addProperty("ts_sec", (Long) record.sourceOffset().get("ts_sec"));
         String[] name = record.valueSchema().name().split("\\.");
         jsonObject.addProperty("db", name[1]);
         jsonObject.addProperty("table", name[2]);
         Struct value = ((Struct) record.value());
         String operatorType = value.getString("op");
         jsonObject.addProperty("operator_type", operatorType);
-
         // c : create, u: update, d: delete, r: read
         // insert update
         if (!"d".equals(operatorType)) {
@@ -67,6 +66,19 @@ public class MyStringDebeziumDeserializationSchema implements DebeziumDeserializ
                 case INT64:
                     Long resultInt = after.getInt64(field.name());
                     jo.addProperty(field.name(), resultInt);
+                    break;
+                case FLOAT32:
+                    Float resultFloat32 = after.getFloat32(field.name());
+                    jo.addProperty(field.name(), resultFloat32);
+                    break;
+                case FLOAT64:
+                    Double resultFloat64 = after.getFloat64(field.name());
+                    jo.addProperty(field.name(), resultFloat64);
+                    break;
+                case BYTES:
+                    // json ignore byte column
+//                    byte[] resultByte = after.getBytes(field.name());
+//                    jo.addProperty(field.name(), String.valueOf(resultByte));
                     break;
                 case STRING:
                     String resultStr = after.getString(field.name());

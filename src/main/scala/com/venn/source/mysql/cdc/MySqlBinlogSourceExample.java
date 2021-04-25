@@ -17,14 +17,15 @@ public class MySqlBinlogSourceExample {
                 .databaseList("venn") // monitor all tables under inventory database
                 .username("root")
                 .password("123456")
-                .deserializer(new MyStringDebeziumDeserializationSchema("localhost", 3306)) // converts SourceRecord to String
+                .deserializer(new MyStringDebeziumDeserializationSchema("localhost", 3306))
                 .build();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         env
                 .addSource(sourceFunction)
-                .print("result")
+                .map(str -> str)
+                .addSink(new CommonKafkaSink())
                 .setParallelism(1);
 
         env.execute();
