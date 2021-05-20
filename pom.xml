@@ -9,9 +9,9 @@
     <version>1.0</version>
 
     <properties>
-        <flink.version>1.12.0</flink.version>
+        <flink.version>1.13.0</flink.version>
         <scala.binary.version>2.11</scala.binary.version>
-        <hadoop.version>2.7.7</hadoop.version>
+        <hadoop.version>3.1.1</hadoop.version>
         <elasticsearch.version>7.2.0</elasticsearch.version>
         <flink-shaded-jackson.version>2.9.8-7.0</flink-shaded-jackson.version>
         <hbase.version>2.1.4</hbase.version>
@@ -155,22 +155,21 @@
             <version>${flink.version}</version>
         </dependency>
         <!-- es -->
-        <dependency>
+        <!--<dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-elasticsearch7_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-csv</artifactId>
             <version>${flink.version}</version>
         </dependency>
-        <!--hive -->
-        <dependency>
+        <!--<dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-hbase-2.2_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-hive_${scala.binary.version}</artifactId>
