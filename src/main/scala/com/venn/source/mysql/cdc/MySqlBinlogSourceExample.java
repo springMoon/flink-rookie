@@ -27,7 +27,7 @@ public class MySqlBinlogSourceExample {
         env
                 .addSource(sourceFunction)
                 .map(str -> str)
-                // 讲数据发送到不同的 topic
+                // 将数据发送到不同的 topic
                 .addSink(new CommonKafkaSink())
                 .setParallelism(1);
 
