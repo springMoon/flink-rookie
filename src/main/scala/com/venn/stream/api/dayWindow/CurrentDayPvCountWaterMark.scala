@@ -61,7 +61,9 @@ object CurrentDayPvCountWaterMark {
         }
       })*/
       .assignAscendingTimestamps(event => sdf.parse(event.createTime).getTime)
+//      .assignTimestampsAndWatermarks()
       .windowAll(TumblingEventTimeWindows.of(Time.days(1), Time.hours(-8)))
+      .trigger(ContinuousProcessingTimeTrigger.of(Time.seconds(10)))
       .reduce(new ReduceFunction[Eventx] {
         override def reduce(event1: Eventx, event2: Eventx): Eventx = {
 
