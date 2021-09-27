@@ -4,9 +4,10 @@ import java.io.File
 import java.sql.{Connection, DriverManager, PreparedStatement, SQLException}
 import java.util
 import java.util.{Timer, TimerTask}
+
 import org.apache.flink.api.scala._
 import com.venn.common.Common
-import com.venn.util.TwoStringSource
+import com.venn.util.{CheckpointUtil, TwoStringSource}
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.configuration.Configuration
@@ -17,14 +18,14 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.slf4j.LoggerFactory
 
 /**
-  * 在 open 方法中使用 定时器，定时加载外部数据，比如mysql
-  * 业务假设： ETL的时候，数据进来，需要补充外部系统的数据，外部系统的数据会更新，所有不能一次性加载就不管了
-  * 又有大部分数据是不会更新的（或者更新只是偶尔的），如果使用异步io 感觉很浪费
-  * 这时候就可以考虑，使用timer，定时加载
-  *
-  *
-  * 在map 中连接，添加定时器，定时从mysql 加载数据
-  */
+ * 在 open 方法中使用 定时器，定时加载外部数据，比如mysql
+ * 业务假设： ETL的时候，数据进来，需要补充外部系统的数据，外部系统的数据会更新，所有不能一次性加载就不管了
+ * 又有大部分数据是不会更新的（或者更新只是偶尔的），如果使用异步io 感觉很浪费
+ * 这时候就可以考虑，使用timer，定时加载
+ *
+ *
+ * 在map 中连接，添加定时器，定时从mysql 加载数据
+ */
 object CustomerTimerDemo {
   private final val logger = LoggerFactory.getLogger(CustomerTimerDemo.getClass)
 
@@ -32,11 +33,12 @@ object CustomerTimerDemo {
 
 
     val env = StreamExecutionEnvironment.getExecutionEnvironment
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+    //    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     if ("/".equals(File.separator)) {
-      val backend = new FsStateBackend(Common.CHECK_POINT_DATA_DIR, true)
-      env.setStateBackend(backend)
-      env.enableCheckpointing(30 * 60 * 1000, CheckpointingMode.EXACTLY_ONCE)
+      //      val backend = new FsStateBackend(Common.CHECK_POINT_DATA_DIR, true)
+      //      env.setStateBackend(backend)
+      //      env.enableCheckpointing(30 * 60 * 1000, CheckpointingMode.EXACTLY_ONCE)
+      CheckpointUtil.setCheckpoint(env, "rocksdb", Common.CHECK_POINT_DATA_DIR, 10)
     } else {
       env.setMaxParallelism(1)
       env.setParallelism(1)
@@ -74,8 +76,8 @@ object CustomerTimerDemo {
       }
 
       /**
-        * query mysql for get new config data
-        */
+       * query mysql for get new config data
+       */
       def query() = {
         logger.info("query mysql")
         try {
@@ -101,7 +103,7 @@ object CustomerTimerDemo {
         }
       }
     })
-//              .print()
+    //              .print()
 
 
     val sink = new FlinkKafkaProducer[String]("timer_out"

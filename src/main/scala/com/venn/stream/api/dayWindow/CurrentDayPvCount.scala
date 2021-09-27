@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat
 
 import com.venn.common.Common
 import com.venn.source.TumblingEventTimeWindows
+import com.venn.util.CheckpointUtil
 import org.apache.flink.api.common.functions.ReduceFunction
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.scala._
@@ -19,29 +20,30 @@ import org.apache.flink.streaming.api.windowing.triggers.{ContinuousEventTimeTri
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaProducer}
 
 /**
-  * Created by venn on 19-5-23.
-  *
-  * use TumblingEventTimeWindows count current day pv
-  * for test, update day window to minute window
-  *
-  * .windowAll(TumblingEventTimeWindows.of(Time.minutes(1), Time.seconds(0)))
-  * TumblingEventTimeWindows can ensure count o minute event,
-  * and time start at 0 second (like : 00:00:00 to 00:00:59)
-  *
-  */
+ * Created by venn on 19-5-23.
+ *
+ * use TumblingEventTimeWindows count current day pv
+ * for test, update day window to minute window
+ *
+ * .windowAll(TumblingEventTimeWindows.of(Time.minutes(1), Time.seconds(0)))
+ * TumblingEventTimeWindows can ensure count o minute event,
+ * and time start at 0 second (like : 00:00:00 to 00:00:59)
+ *
+ */
 object CurrentDayPvCount {
 
   def main(args: Array[String]): Unit = {
     // environment
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+    //    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env.setParallelism(1)
-    if ("\\".equals(File.pathSeparator)) {
-      val rock = new RocksDBStateBackend(Common.CHECK_POINT_DATA_DIR)
-      env.setStateBackend(rock)
-      // checkpoint interval
-      env.enableCheckpointing(10000)
-    }
+    //    if ("\\".equals(File.pathSeparator)) {
+    //      val rock = new RocksDBStateBackend(Common.CHECK_POINT_DATA_DIR)
+    //      env.setStateBackend(rock)
+    //      // checkpoint interval
+    //      env.enableCheckpointing(10000)
+    //    }
+    CheckpointUtil.setCheckpoint(env, "rocksdb", Common.CHECK_POINT_DATA_DIR, 10)
 
     val topic = "current_day"
     val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
@@ -75,13 +77,13 @@ object CurrentDayPvCount {
       .reduce(new ReduceFunction[Eventx] {
 
 
-      override def reduce(event1: Eventx, event2: Eventx): Eventx = {
-        print(event2.toString)
+        override def reduce(event1: Eventx, event2: Eventx): Eventx = {
+          print(event2.toString)
 
-        // 将结果中，id的最小值和最大值输出
-        new Eventx(event1.id, event2.id, event1.amt + event2.amt)
-      }
-    })
+          // 将结果中，id的最小值和最大值输出
+          new Eventx(event1.id, event2.id, event1.amt + event2.amt)
+        }
+      })
     // format output even, connect min max id, add current timestamp
     //      .map(event => Event(event.id + "-" + event.createTime, sdf.format(System.currentTimeMillis()), event.count))
     stream.print("result : ")
