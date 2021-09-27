@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat
 
 import com.venn.common.Common
 import com.venn.source.TumblingEventTimeWindows
+import com.venn.util.CheckpointUtil
 import org.apache.flink.api.java.tuple.Tuple
 import org.apache.flink.api.scala._
 import org.apache.flink.formats.json.JsonNodeDeserializationSchema
@@ -22,22 +23,23 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.flink.util.Collector
 
 /**
-  * 侧边输出：This operation can be useful when you want to split a stream of data
-  */
+ * 侧边输出：This operation can be useful when you want to split a stream of data
+ */
 object LateDataProcess {
   val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
 
   def main(args: Array[String]): Unit = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
-    if ("/".equals(File.separator)) {
-      val backend = new FsStateBackend(Common.CHECK_POINT_DATA_DIR, true)
-      env.setStateBackend(backend)
-      env.enableCheckpointing(10 * 1000, CheckpointingMode.EXACTLY_ONCE)
-    } else {
-      env.setMaxParallelism(1)
-      env.setParallelism(1)
-    }
+    //    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+    //    if ("/".equals(File.separator)) {
+    //      val backend = new FsStateBackend(Common.CHECK_POINT_DATA_DIR, true)
+    //      env.setStateBackend(backend)
+    //      env.enableCheckpointing(10 * 1000, CheckpointingMode.EXACTLY_ONCE)
+    //    } else {
+    //      env.setMaxParallelism(1)
+    //      env.setParallelism(1)
+    //    }
+    CheckpointUtil.setCheckpoint(env, "rocksdb", Common.CHECK_POINT_DATA_DIR, 10)
 
     val source = new FlinkKafkaConsumer[ObjectNode]("late_data", new JsonNodeDeserializationSchema(), Common.getProp)
     // 侧边输出的tag
@@ -53,26 +55,27 @@ object LateDataProcess {
       })
       // assign watermarks every event
       .assignTimestampsAndWatermarks(new AssignerWithPunctuatedWatermarks[LateDataEvent]() {
-      // check extractTimestamp emitted watermark is non-null and large than previously
-      override def checkAndGetNextWatermark(lastElement: LateDataEvent, extractedTimestamp: Long): Watermark = {
-        new Watermark(extractedTimestamp)
-      }
-      // generate next watermark
-      override def extractTimestamp(element: LateDataEvent, previousElementTimestamp: Long): Long = {
-        val eventTime = sdf.parse(element.createTime).getTime
-        eventTime
-      }
-    })
+        // check extractTimestamp emitted watermark is non-null and large than previously
+        override def checkAndGetNextWatermark(lastElement: LateDataEvent, extractedTimestamp: Long): Watermark = {
+          new Watermark(extractedTimestamp)
+        }
+
+        // generate next watermark
+        override def extractTimestamp(element: LateDataEvent, previousElementTimestamp: Long): Long = {
+          val eventTime = sdf.parse(element.createTime).getTime
+          eventTime
+        }
+      })
       // flink auto create watermark
       //      .assignAscendingTimestamps(element => sdf.parse(element.createTime).getTime)
       // assign watermarks periodically(定期生成水印)
       .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor[LateDataEvent](Time.milliseconds(50)) {
-      override def extractTimestamp(element: LateDataEvent): Long = {
-        println("current timestamp : " + sdf.parse(element.createTime).getTime)
-        sdf.parse(element.createTime).getTime
-      }
+        override def extractTimestamp(element: LateDataEvent): Long = {
+          println("current timestamp : " + sdf.parse(element.createTime).getTime)
+          sdf.parse(element.createTime).getTime
+        }
 
-    })
+      })
       // after keyBy will have window number of different key
       .keyBy("key")
       .window(TumblingEventTimeWindows.of(Time.minutes(1)))

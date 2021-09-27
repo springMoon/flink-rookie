@@ -13,7 +13,8 @@ public class Common {
     public final static String ZOOKEEPER_QUORUM = "venn";
     public final static String ZOOKEEPER_PORT = "2180";
     public final static String ZOOKEEPER_ZNODE_PARENT = "venn:9092";
-    public final static String CHECK_POINT_DATA_DIR = "file:///out/checkpoint";
+    public final static String CHECK_POINT_DATA_DIR = "/home/wuxu/tmp/checkpoint";
+//    public final static String CHECK_POINT_DATA_DIR = "file:///out/checkpoint";
 //    public final static String CHECK_POINT_DATA_DIR = "hdfs:///venn/checkpoint";
 
     public static Properties prop = null;

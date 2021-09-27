@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat
 
 import com.venn.common.Common
 import com.venn.source.TumblingEventTimeWindows
+import com.venn.util.CheckpointUtil
 import org.apache.flink.api.common.functions.ReduceFunction
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
@@ -24,23 +25,24 @@ import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKaf
 import org.apache.flink.util.Collector
 
 /**
-  * test day index: use ContinuousProcessingTimeTrigger trigger calculation,
-  * use Evictor evitor window element, reduce calculation
-  *
-  */
+ * test day index: use ContinuousProcessingTimeTrigger trigger calculation,
+ * use Evictor evitor window element, reduce calculation
+ *
+ */
 object WindowEvictor {
 
   def main(args: Array[String]): Unit = {
     // environment
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+    //    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env.setParallelism(1)
-    if ("\\".equals(File.pathSeparator)) {
-      val rock = new RocksDBStateBackend(Common.CHECK_POINT_DATA_DIR)
-      env.setStateBackend(rock)
-      // checkpoint interval
-      env.enableCheckpointing(10000)
-    }
+    //    if ("\\".equals(File.pathSeparator)) {
+    //      val rock = new RocksDBStateBackend(Common.CHECK_POINT_DATA_DIR)
+    //      env.setStateBackend(rock)
+    //       checkpoint interval
+    //      env.enableCheckpointing(10000)
+    //    }
+    CheckpointUtil.setCheckpoint(env, "rocksdb", Common.CHECK_POINT_DATA_DIR, 10)
 
     val topic = "current_day"
     val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
@@ -56,10 +58,10 @@ object WindowEvictor {
       .assignAscendingTimestamps(event => sdf.parse(event.createTime).getTime)
       .windowAll(TumblingEventTimeWindows.of(Time.days(1), Time.hours(-8)))
       .trigger(ContinuousProcessingTimeTrigger.of(Time.seconds(10)))
-      // evictor after process, not need, use the elements.drop(1)
-      // if all the element in window is evictor, the window function will not trigger calc
-      // event use the processingTimeTrigger
-//      .evictor(TimeEvictor.of(Time.seconds(0), true))
+    // evictor after process, not need, use the elements.drop(1)
+    // if all the element in window is evictor, the window function will not trigger calc
+    // event use the processingTimeTrigger
+    //      .evictor(TimeEvictor.of(Time.seconds(0), true))
 
 
     /*stream.reduce(new ReduceFunction[Eventx] {
@@ -69,42 +71,42 @@ object WindowEvictor {
     })*/
 
 
-      val pStream1 = stream.process(new ProcessAllWindowFunction[Eventx, String, TimeWindow] {
+    val pStream1 = stream.process(new ProcessAllWindowFunction[Eventx, String, TimeWindow] {
 
-        // store the current interval count value, and sum value
-        var countState: ValueState[Long] = _
-        var sumState: ValueState[BigDecimal] = _
+      // store the current interval count value, and sum value
+      var countState: ValueState[Long] = _
+      var sumState: ValueState[BigDecimal] = _
 
-        override def open(parameters: Configuration): Unit = {
-          // init countState and sumState, set sumState = BigDecimal("0.0")
-          countState = getRuntimeContext.getState(new ValueStateDescriptor[Long]("countState", classOf[Long]))
-          sumState = getRuntimeContext.getState(new ValueStateDescriptor[BigDecimal]("sumState", classOf[BigDecimal]))
-          // No key set. This method should not be called outside of a keyed context.
-//          sumState.update(BigDecimal("0.0"))
+      override def open(parameters: Configuration): Unit = {
+        // init countState and sumState, set sumState = BigDecimal("0.0")
+        countState = getRuntimeContext.getState(new ValueStateDescriptor[Long]("countState", classOf[Long]))
+        sumState = getRuntimeContext.getState(new ValueStateDescriptor[BigDecimal]("sumState", classOf[BigDecimal]))
+        // No key set. This method should not be called outside of a keyed context.
+        //          sumState.update(BigDecimal("0.0"))
+      }
+
+      override def process(context: Context, elements: Iterable[Eventx], out: Collector[String]): Unit = {
+        // set default value
+        if (sumState.value() == null) {
+          sumState.update(BigDecimal("1.0"))
         }
-
-        override def process(context: Context, elements: Iterable[Eventx], out: Collector[String]): Unit = {
-          // set default value
-          if (sumState.value() == null){
-            sumState.update(BigDecimal("1.0"))
-          }
-          // update count
-          var count = countState.value()
-          count += elements.count(_ => true)
-          countState.update(count)
-          // update sum
-          var sum = sumState.value()
-          val it = elements.toIterator
-          while (it.hasNext) {
-            val currentElement = it.next()
-            sum = sum.+(BigDecimal(currentElement.amt))
-          }
-          sumState.update(sum)
-
-          out.collect("sum=" + sum.toString)
-          out.collect("count=" + count.toString)
+        // update count
+        var count = countState.value()
+        count += elements.count(_ => true)
+        countState.update(count)
+        // update sum
+        var sum = sumState.value()
+        val it = elements.toIterator
+        while (it.hasNext) {
+          val currentElement = it.next()
+          sum = sum.+(BigDecimal(currentElement.amt))
         }
-      })
+        sumState.update(sum)
+
+        out.collect("sum=" + sum.toString)
+        out.collect("count=" + count.toString)
+      }
+    })
 
 
     pStream1.print()

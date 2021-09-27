@@ -1,8 +1,9 @@
 package com.venn.demo
 
 import java.io.File
+
 import com.venn.common.Common
-import com.venn.util.{MathUtil, StringUtil}
+import com.venn.util.{CheckpointUtil, MathUtil, StringUtil}
 import org.apache.flink.api.common.state.{MapState, MapStateDescriptor, ValueState, ValueStateDescriptor}
 import org.apache.flink.api.java.tuple.Tuple
 import org.apache.flink.api.scala._
@@ -20,16 +21,17 @@ import org.apache.flink.streaming.api.{CheckpointingMode, TimeCharacteristic}
 import org.apache.flink.util.Collector
 
 /**
-  * day window count demo :  distinct user, count item
-  */
+ * day window count demo :  distinct user, count item
+ */
 object WordCountDistinct {
 
   def main(args: Array[String]): Unit = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     if ("/".equals(File.separator)) {
-      val backend = new FsStateBackend(Common.CHECK_POINT_DATA_DIR, true)
-      env.setStateBackend(backend)
-      env.enableCheckpointing(10 * 1000, CheckpointingMode.EXACTLY_ONCE)
+      //      val backend = new FsStateBackend(Common.CHECK_POINT_DATA_DIR, true)
+      //      env.setStateBackend(backend)
+      //      env.enableCheckpointing(10 * 1000, CheckpointingMode.EXACTLY_ONCE)
+      CheckpointUtil.setCheckpoint(env, "rocksdb", Common.CHECK_POINT_DATA_DIR, 10)
     } else {
       env.setMaxParallelism(1)
       env.setParallelism(1)

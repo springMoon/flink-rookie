@@ -4,6 +4,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 
 import com.venn.common.Common
+import com.venn.util.CheckpointUtil
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.scala._
 import org.apache.flink.contrib.streaming.state.RocksDBStateBackend
@@ -17,9 +18,9 @@ import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 
 /**
-  * for test CountAndContinuousProcessTimeTrigger
-  *
-  */
+ * for test CountAndContinuousProcessTimeTrigger
+ *
+ */
 object ProcessWindowDemoForTrigger {
   val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -28,10 +29,11 @@ object ProcessWindowDemoForTrigger {
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
     if ("\\".equals(File.pathSeparator)) {
-      val rock = new RocksDBStateBackend(Common.CHECK_POINT_DATA_DIR)
-      env.setStateBackend(rock)
+      //      val rock = new RocksDBStateBackend(Common.CHECK_POINT_DATA_DIR)
+      //      env.setStateBackend(rock)
       // checkpoint interval
-      env.enableCheckpointing(10000)
+      //      env.enableCheckpointing(10000)
+      CheckpointUtil.setCheckpoint(env, "rocksdb", Common.CHECK_POINT_DATA_DIR, 10)
     }
 
     val topic = "current_day"
