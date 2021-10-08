@@ -40,12 +40,12 @@ object CurrentDayPvCountWaterMark {
     //    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     //    env.getConfig.setAutoWatermarkInterval(0)
     env.setParallelism(1)
-    if ("\\".equals(File.pathSeparator)) {
-      val rock = new RocksDBStateBackend(Common.CHECK_POINT_DATA_DIR)
-      env.setStateBackend(rock)
-      // checkpoint interval
-      env.enableCheckpointing(10000)
-    }
+    //    if ("\\".equals(File.pathSeparator)) {
+    //      val rock = new RocksDBStateBackend(Common.CHECK_POINT_DATA_DIR)
+    //      env.setStateBackend(rock)
+    //      // checkpoint interval
+    //      env.enableCheckpointing(10000)
+    //    }
     CheckpointUtil.setCheckpoint(env, "rocksdb", Common.CHECK_POINT_DATA_DIR, 10)
 
     val topic = "current_day"
