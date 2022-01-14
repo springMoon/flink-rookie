@@ -32,7 +32,7 @@ public class HttpServer {
                 exchange.sendResponseHeaders(200, 0);
                 OutputStream os = exchange.getResponseBody();
                 String result = UUID.randomUUID().toString();
-                result = "1,name," + result;
+                result = System.currentTimeMillis() + ",name," + result;
                 os.write(result.getBytes());
                 os.close();
             } catch (IOException ie) {

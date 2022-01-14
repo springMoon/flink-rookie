@@ -1,4 +1,4 @@
-package com.venn.index.question.dynamicWindow;
+package com.venn.question.dynamicWindow;
 
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeutils.TypeSerializer;

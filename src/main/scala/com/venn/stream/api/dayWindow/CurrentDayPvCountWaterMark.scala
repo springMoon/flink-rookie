@@ -55,6 +55,7 @@ object CurrentDayPvCountWaterMark {
     sink.setWriteTimestampToKafka(true)
 
     val stream = env.addSource(kafkaSource)
+      .setParallelism(12)
       .map(node => {
         Eventx(node.get("id").asText(), node.get("createTime").asText())
       })
