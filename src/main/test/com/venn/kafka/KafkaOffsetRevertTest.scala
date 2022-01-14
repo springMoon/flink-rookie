@@ -10,22 +10,22 @@ import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import scala.util.parsing.json.JSONObject
 
 /**
-  * test data maker
-  */
+ * test data maker
+ */
 
 object CurrentDayMaker {
 
 
   /**
-    * kafka offset revert test
-    * kafka offset 回退测试
-    *
-    * @return
-    */
+   * kafka offset revert test
+   * kafka offset 回退测试
+   *
+   * @return
+   */
   val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
 
   def main(args: Array[String]): Unit = {
-    val producer = new KafkaProducer[String, String](Common.getProp(true))
+    val producer = new KafkaProducer[String, String](Common.getProp())
     var i = 0;
     while (true) {
 

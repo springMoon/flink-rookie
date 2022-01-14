@@ -16,7 +16,8 @@ object SlotPartitionDemo {
     val sink = new FlinkKafkaProducer[String](topic+"_out", new SimpleStringSchema(), Common.getProp)
 
     env.setParallelism(2)
-    env.addSource(source).addSink(sink)
+    env.addSource(source)
+      .addSink(sink)
 
 
     env.execute(this.getClass.getName)
