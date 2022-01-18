@@ -1,8 +1,6 @@
 package com.venn.util;
 
-import com.google.gson.Gson;
 import com.venn.entity.MyStringKafkaRecord;
-import com.venn.entity.UserLog;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema;
 import org.apache.flink.util.Collector;
@@ -26,7 +24,10 @@ public class MyKafkaRecordDeserializationSchema
             deserializer = new StringDeserializer();
         }
         long offset = record.offset();
-        String key = new String(record.key());
+        String key = null;
+        if (record.key() != null) {
+            key = new String(record.key());
+        }
         long timestamp = record.timestamp();
 
 
