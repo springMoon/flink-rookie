@@ -19,6 +19,7 @@ object MysqlOutputDemo {
 
   def main(args: Array[String]): Unit = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
+    env.setParallelism(1)
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     if ("/".equals(File.separator)) {
       val backend = new FsStateBackend(Common.CHECK_POINT_DATA_DIR, true)

@@ -15,7 +15,7 @@ public class Common {
     public final static String ZOOKEEPER_ZNODE_PARENT = "venn:9092";
     public final static String PULSAR_SERVER = "pulsar://localhost:6650";
     public final static String PULSAR_ADMIN = "http://localhost:8080";
-    public final static String CHECK_POINT_DATA_DIR = "/home/wuxu/tmp/checkpoint";
+    public final static String CHECK_POINT_DATA_DIR = "hdfs:///home/wuxu/tmp/checkpoint";
 //    public final static String CHECK_POINT_DATA_DIR = "file:///out/checkpoint";
 //    public final static String CHECK_POINT_DATA_DIR = "hdfs:///venn/checkpoint";
 
