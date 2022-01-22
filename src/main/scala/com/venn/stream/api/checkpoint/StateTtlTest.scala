@@ -31,6 +31,11 @@ import org.apache.flink.util.Collector
  * 从 5 分钟后的 Checkpoint 恢复，状态不在了
  * 从 5 分钟内的 Checkpoint 恢复，状态还在，恢复后的状态的有效期，是从第一次写入时间开始计算的
  * 停止任务超过5分钟，从第 1 分钟的 Checkpoint 恢复，状态不在了
+ *
+ * 写数据后等 Checkpoint 完成，使用该 Checkpoint 马上启动任务，状态数据还在
+ *                          使用该 Checkpoint 等 5 分钟启动任务，状态数据不在了
+ *
+ * 结论： 使用 state ttl，Checkpoint 恢复后，ttl 时间是从第一次写入时间开始算的
  */
 object StateTtlTest {
 
