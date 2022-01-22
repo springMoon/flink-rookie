@@ -1,6 +1,6 @@
 package com.venn.util;
 
-import com.venn.entity.MyStringKafkaRecord;
+import com.venn.entity.KafkaSimpleStringRecord;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema;
 import org.apache.flink.util.Collector;
@@ -11,14 +11,14 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.io.IOException;
 
-public class MyKafkaRecordDeserializationSchema
-        implements KafkaRecordDeserializationSchema<MyStringKafkaRecord> {
+public class SimpleKafkaRecordDeserializationSchema
+        implements KafkaRecordDeserializationSchema<KafkaSimpleStringRecord> {
     private static final long serialVersionUID = -3765473065594331694L;
     private transient Deserializer<String> deserializer;
 
     @Override
     public void deserialize(
-            ConsumerRecord<byte[], byte[]> record, Collector<MyStringKafkaRecord> collector)
+            ConsumerRecord<byte[], byte[]> record, Collector<KafkaSimpleStringRecord> collector)
             throws IOException {
         if (deserializer == null) {
             deserializer = new StringDeserializer();
@@ -32,15 +32,15 @@ public class MyKafkaRecordDeserializationSchema
 
 
         // makeup MyStringKafkaRecord
-        MyStringKafkaRecord myRecord = new MyStringKafkaRecord(
+        KafkaSimpleStringRecord myRecord = new KafkaSimpleStringRecord(
                 new TopicPartition(record.topic(), record.partition()), offset, key, timestamp, deserializer.deserialize(record.topic(), record.value()));
 
         collector.collect(myRecord);
     }
 
     @Override
-    public TypeInformation<MyStringKafkaRecord> getProducedType() {
-        return TypeInformation.of(MyStringKafkaRecord.class);
+    public TypeInformation<KafkaSimpleStringRecord> getProducedType() {
+        return TypeInformation.of(KafkaSimpleStringRecord.class);
     }
 }
 

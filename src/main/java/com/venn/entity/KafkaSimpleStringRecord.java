@@ -4,17 +4,24 @@ import org.apache.kafka.common.TopicPartition;
 
 import java.io.Serializable;
 
-public class MyStringKafkaRecord implements Serializable {
+/**
+ * generic string kafka record, ues by @MyKafkaRecordDeserializationSchema
+ */
+public class KafkaSimpleStringRecord implements Serializable {
     private static final long serialVersionUID = 4813439951036021779L;
-
+    // kafka topic partition
     private final TopicPartition tp;
+    // record kafka offset
     private final long offset;
+    // record key
     private final String key;
+    // record timestamp
     private final long timestamp;
+    // record value
     private final String value;
 
 
-    public MyStringKafkaRecord(TopicPartition tp, long offset, String key, long timestamp, String value) {
+    public KafkaSimpleStringRecord(TopicPartition tp, long offset, String key, long timestamp, String value) {
         this.tp = tp;
         this.offset = offset;
         this.key = key;

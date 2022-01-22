@@ -5,8 +5,8 @@ import java.util
 
 import com.google.gson.Gson
 import com.venn.common.Common
-import com.venn.entity.{MyStringKafkaRecord, UserLog}
-import com.venn.util.{DateTimeUtil, MyKafkaRecordDeserializationSchema}
+import com.venn.entity.{KafkaSimpleStringRecord, UserLog}
+import com.venn.util.{DateTimeUtil, SimpleKafkaRecordDeserializationSchema}
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.MapFunction
 import org.apache.flink.api.common.serialization.SimpleStringSchema
@@ -18,9 +18,6 @@ import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
-import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.api.windowing.triggers.ContinuousProcessingTimeTrigger
 import org.apache.flink.util.Collector
 
 /**
@@ -43,22 +40,22 @@ object DynamicWindow {
     env.setParallelism(1)
 
     val source = KafkaSource
-      .builder[MyStringKafkaRecord]()
+      .builder[KafkaSimpleStringRecord]()
       //      new KafkaSourceBuilder[MyStringKafkaRecord]
       .setBootstrapServers(bootstrapServer)
       .setGroupId("MyGroup")
       .setClientIdPrefix("aa")
       .setTopics(util.Arrays.asList("user_log"))
       //      .setDeserializer(KafkaRecordDeserializationSchema.of(new JSONKeyValueDeserializationSchema(true)))
-      .setDeserializer(new MyKafkaRecordDeserializationSchema())
+      .setDeserializer(new SimpleKafkaRecordDeserializationSchema())
       //      .setStartingOffsets(OffsetsInitializer.earliest())
       .setStartingOffsets(OffsetsInitializer.latest())
       .build()
 
     val stream = env.fromSource(source,
       WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(5)), "kafkaSource")
-      .map(new MapFunction[MyStringKafkaRecord, UserLog] {
-        override def map(element: MyStringKafkaRecord): UserLog = {
+      .map(new MapFunction[KafkaSimpleStringRecord, UserLog] {
+        override def map(element: KafkaSimpleStringRecord): UserLog = {
 
           val userLog = new Gson().fromJson(element.getValue, classOf[UserLog]);
           val ts = DateTimeUtil.parse(userLog.getTs)
