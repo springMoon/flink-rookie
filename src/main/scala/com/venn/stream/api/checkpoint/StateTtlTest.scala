@@ -64,7 +64,7 @@ object StateTtlTest {
     env.getCheckpointConfig.setMaxConcurrentCheckpoints(1)
 
     // 使用 externalized checkpoints，这样 checkpoint 在作业取消后仍就会被保留
-    env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
+    env.getCheckpointConfig.setExternalizedCheckpointCleanup(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
 
     // storage path
     val checkpointStorage = new FileSystemCheckpointStorage("hdfs:///user/wuxu/checkpoint/state_ttl")
