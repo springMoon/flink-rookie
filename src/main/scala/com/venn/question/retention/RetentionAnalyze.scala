@@ -78,6 +78,8 @@ object RetentionAnalyze {
           userLog
         }
       })
+      .name("map")
+      .uid("map")
       //      .assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks[UserLog] {
       //        var timestamp: Long = _
       //
@@ -103,9 +105,8 @@ object RetentionAnalyze {
 
             override def onEvent(event: UserLog, eventTimestamp: Long, output: WatermarkOutput): Unit = {
               val timestamp = DateTimeUtil.parse(event.ts).getTime
-              (eventTimestamp + " - " + timestamp)
-              watermark = new Watermark(timestamp - 1)
-              output.emitWatermark(watermark)
+                watermark = new Watermark(timestamp - 1)
+                output.emitWatermark(watermark)
             }
 
             override def onPeriodicEmit(output: WatermarkOutput): Unit = {
@@ -119,15 +120,18 @@ object RetentionAnalyze {
           "1"
         }
       })
-      //.window(TumblingEventTimeWindows.of(Time.days(1), Time.hours(-8)))
-      .window(TumblingEventTimeWindows.of(Time.minutes(1)))
-      .trigger(ContinuousEventTimeTrigger.of(Time.seconds(10)))
+      .window(TumblingEventTimeWindows.of(Time.days(1), Time.hours(-8)))
+      //      .window(TumblingEventTimeWindows.of(Time.minutes(1)))
+      .trigger(ContinuousEventTimeTrigger.of(Time.seconds(10 * 60)))
       //      .window(TumblingProcessingTimeWindows.of(Time.seconds(10)))
       // 做天的窗口，初始化的时候加载昨日新增用户列表
       // 按天划分，触发器触发计算
       // 窗口结束的将新用户替换昨日新增用户列表
       // 实时计算当日的用户留存率： 第1日留存率（即“次留”）：（当天新增的用户中，新增日之后的第1天还登录的用户数）/第一天新增总用户数；
       .process(new RetentionAnalyzeProcessFunction)
+      .name("process")
+      .uid("process")
+      .print()
 
 
     env.execute("RetentionAnalyze")
