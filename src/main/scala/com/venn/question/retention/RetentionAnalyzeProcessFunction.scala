@@ -4,6 +4,7 @@ import java.sql.{Connection, DriverManager, PreparedStatement}
 import java.util
 
 import com.venn.util.DateTimeUtil
+import org.apache.flink.api.common.state.{MapState, MapStateDescriptor, ValueState, ValueStateDescriptor}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.function.ProcessWindowFunction
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
@@ -22,9 +23,13 @@ class RetentionAnalyzeProcessFunction extends ProcessWindowFunction[UserLog, Str
   var mysqlUrl = "jdbc:mysql://localhost:3306/venn?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true"
   var mysqlUser = "root"
   var mysqlPass = "123456"
-  val allUserMap = new util.HashMap[String, Int]()
-  val lastUser = new util.HashMap[String, Int]()
+  var allUserMap = new util.HashMap[String, Int]()
+  var lastUserMap = new util.HashMap[String, Int]()
   val currentUser = new util.HashMap[String, Int]()
+
+  var allUserState: ValueState[util.HashMap[String, Int]] = _
+  var lastUserState: ValueState[util.HashMap[String, Int]] = _
+  var currentUserState: ValueState[util.HashMap[String, Int]] = _
 
 
   /**
@@ -34,14 +39,13 @@ class RetentionAnalyzeProcessFunction extends ProcessWindowFunction[UserLog, Str
    */
   override def open(parameters: Configuration): Unit = {
     LOG.info("RetentionAnalyzeProcessFunction open")
-    //    val calendar = Calendar.getInstance()
-    //    calendar.setTime(new Date())
-    //    calendar.add(Calendar.DAY_OF_MONTH, -1)
-    //    val lastDay = DateTimeUtil.format(calendar.getTime, DateTimeUtil.YYYY_MM_DD)
+    // create state
+    allUserState = getRuntimeContext.getState(new ValueStateDescriptor[util.HashMap[String, Int]]("allUser", classOf[util.HashMap[String, Int]]))
+    lastUserState = getRuntimeContext.getState(new ValueStateDescriptor[util.HashMap[String, Int]]("lastUser", classOf[util.HashMap[String, Int]]))
+    currentUserState = getRuntimeContext.getState(new ValueStateDescriptor[util.HashMap[String, Int]]("currentUser", classOf[util.HashMap[String, Int]]))
 
     reconnect()
     loadUser()
-
   }
 
 
@@ -56,12 +60,21 @@ class RetentionAnalyzeProcessFunction extends ProcessWindowFunction[UserLog, Str
    */
   override def process(key: String, context: Context, elements: Iterable[UserLog], out: Collector[String]): Unit = {
     LOG.debug("trigger process")
+    if (allUserState.value() == null) {
+      allUserState.update(allUserMap)
+      lastUserState.update(lastUserMap)
+    } else {
+      allUserMap = allUserState.value()
+      lastUserMap = lastUserState.value()
+    }
+
+
     val it = elements.iterator
 
     var lastUserLog = 0d
     while (it.hasNext) {
       val userLog = it.next()
-      if (lastUser.containsKey(userLog.userId)) {
+      if (lastUserMap.containsKey(userLog.userId)) {
         lastUserLog += 1l
       }
       if (!allUserMap.containsKey(userLog.userId)) {
@@ -72,10 +85,10 @@ class RetentionAnalyzeProcessFunction extends ProcessWindowFunction[UserLog, Str
     val day = DateTimeUtil.formatMillis(context.window.getStart, DateTimeUtil.YYYY_MM_DD)
 
     var str: String = null
-    if (lastUser.isEmpty) {
+    if (lastUserMap.isEmpty) {
       str = day + ",current," + currentUser.size()
     } else {
-      str = day + ",current," + currentUser.size() + "," + lastUserLog / lastUser.size()
+      str = day + ",current," + currentUser.size() + "," + lastUserLog / lastUserMap.size()
     }
     out.collect(str)
 
@@ -117,9 +130,11 @@ class RetentionAnalyzeProcessFunction extends ProcessWindowFunction[UserLog, Str
     val window = context.window
     LOG.info(String.format("window start : %s, end: %s, clear", DateTimeUtil.formatMillis(window.getStart, DateTimeUtil.YYYY_MM_DD_HH_MM_SS), DateTimeUtil.formatMillis(window.getEnd, DateTimeUtil.YYYY_MM_DD_HH_MM_SS)))
     // clear last user, add current user as last/all user map
-    lastUser.clear()
-    lastUser.putAll(currentUser)
+    lastUserMap.clear()
+    lastUserMap.putAll(currentUser)
     allUserMap.putAll(currentUser)
+    lastUserState.update(lastUserMap)
+    allUserState.update(allUserMap)
     // export current user to mysql userInfo
     exportCurrentUser(window)
     // clear current user
@@ -147,12 +162,12 @@ class RetentionAnalyzeProcessFunction extends ProcessWindowFunction[UserLog, Str
       val isLast = resultSet.getInt(2)
 
       if (isLast == 0) {
-        lastUser.put(userId, isLast)
+        lastUserMap.put(userId, isLast)
       }
       allUserMap.put(userId, isLast)
     }
 
-    LOG.info("load all user count : " + allUserMap.size() + ", last user : " + lastUser)
+    LOG.info("load all user count : " + allUserMap.size() + ", last user : " + lastUserMap)
 
   }
 }
