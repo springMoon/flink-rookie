@@ -2,24 +2,25 @@ package com.venn.question.retention
 
 
 import com.google.gson.JsonParser
+import com.venn.common.Common
 import com.venn.entity.KafkaSimpleStringRecord
 import com.venn.util.{DateTimeUtil, SimpleKafkaRecordDeserializationSchema}
 import org.apache.flink.api.common.eventtime._
-import org.apache.flink.api.common.functions.RichMapFunction
+import org.apache.flink.api.common.functions.RichFlatMapFunction
+import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, KafkaSink}
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
 import org.apache.flink.contrib.streaming.state.EmbeddedRocksDBStateBackend
 import org.apache.flink.runtime.state.storage.FileSystemCheckpointStorage
 import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.scala.function.ProcessWindowFunction
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.ContinuousEventTimeTrigger
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.streaming.api.{CheckpointingMode, TimeCharacteristic}
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
@@ -31,42 +32,48 @@ import org.slf4j.LoggerFactory
 object RetentionAnalyze {
 
   val LOG = LoggerFactory.getLogger("RetentionAnalyze")
-  //val checkpointPath = "hdfs:///user/wuxu/checkpoint/RetentionAnalyze"
-  val checkpointPath = "file:///tmp/checkpoint/RetentionAnalyze"
+  val bootstrapServer = "localhost:9092"
+  val topic = "user_log"
+  val sinkTopic = "user_log_sink"
+  val checkpointPath = "hdfs:///user/wuxu/checkpoint/RetentionAnalyze"
+  //  val checkpointPath = "file:///tmp/checkpoint/RetentionAnalyze"
 
   def main(args: Array[String]): Unit = {
 
     val env = StreamExecutionEnvironment.getExecutionEnvironment
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+    //    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env.setParallelism(1)
     // checkpoint
     setCheckPoint(env, checkpointPath)
 
     // source
-    val source = KafkaSource
+    val kafkaSource = KafkaSource
       .builder[KafkaSimpleStringRecord]()
       // stop job when consumer to latest offset ?
       //      .setBounded(OffsetsInitializer.latest())
       //      .setUnbounded(OffsetsInitializer.latest())
-      .setBootstrapServers("localhost:9092")
+      .setBootstrapServers(bootstrapServer)
       .setGroupId("ra")
-      .setTopics("user_log")
+      .setTopics(topic)
       .setStartingOffsets(OffsetsInitializer.latest())
       .setDeserializer(new SimpleKafkaRecordDeserializationSchema())
       .build()
 
-    env.fromSource(source, WatermarkStrategy.noWatermarks(), "source")
+    val source = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "source")
       .name("source")
       .uid("source")
-      .map(new RichMapFunction[KafkaSimpleStringRecord, UserLog] {
 
-        var jsonParse: JsonParser = _
+    val stream = source.flatMap(new RichFlatMapFunction[KafkaSimpleStringRecord, UserLog] {
+      var jsonParse: JsonParser = _
 
-        override def open(parameters: Configuration): Unit = {
-          jsonParse = new JsonParser
-        }
+      override def open(parameters: Configuration): Unit = {
+        jsonParse = new JsonParser
+      }
 
-        override def map(element: KafkaSimpleStringRecord): UserLog = {
+      // parse json to UserLog
+      override def flatMap(element: KafkaSimpleStringRecord, out: Collector[UserLog]): Unit = {
+        val userLog = null
+        try {
           val jsonObject = jsonParse.parse(element.getValue).getAsJsonObject
           val userId = jsonObject.get("user_id").getAsString
           val categoryId = jsonObject.get("category_id").getAsInt
@@ -75,11 +82,17 @@ object RetentionAnalyze {
           val ts = jsonObject.get("ts").getAsString
           val userLog = UserLog(userId, categoryId, itemId, behavior, ts)
 
-          userLog
+          out.collect(userLog)
+        } catch {
+          case _ =>
+            LOG.warn("parse json error : " + element.getValue)
         }
-      })
+
+      }
+    })
       .name("map")
       .uid("map")
+      // deprecated assignTimestampsAndWatermarks
       //      .assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks[UserLog] {
       //        var timestamp: Long = _
       //
@@ -97,7 +110,7 @@ object RetentionAnalyze {
       // default is IngestionTime, kafka source will add timestamp to StreamRecord,
       // if not set assignAscendingTimestamps, use StreamRecord' timestamp, so is ingestion time
       .assignAscendingTimestamps(userLog => DateTimeUtil.parse(userLog.ts).getTime)
-      // todo check watermark
+      // create watermark by all elements
       .assignTimestampsAndWatermarks(new WatermarkStrategy[UserLog] {
         override def createWatermarkGenerator(context: WatermarkGeneratorSupplier.Context): WatermarkGenerator[UserLog] = {
           new WatermarkGenerator[UserLog] {
@@ -105,8 +118,8 @@ object RetentionAnalyze {
 
             override def onEvent(event: UserLog, eventTimestamp: Long, output: WatermarkOutput): Unit = {
               val timestamp = DateTimeUtil.parse(event.ts).getTime
-                watermark = new Watermark(timestamp - 1)
-                output.emitWatermark(watermark)
+              watermark = new Watermark(timestamp - 1)
+              output.emitWatermark(watermark)
             }
 
             override def onPeriodicEmit(output: WatermarkOutput): Unit = {
@@ -115,6 +128,7 @@ object RetentionAnalyze {
           }
         }
       })
+      // key all data to one key
       .keyBy(new KeySelector[UserLog, String] {
         override def getKey(element: UserLog): String = {
           "1"
@@ -131,7 +145,24 @@ object RetentionAnalyze {
       .process(new RetentionAnalyzeProcessFunction)
       .name("process")
       .uid("process")
-      .print()
+
+    //    stream.print()
+
+    val kafkaSink = KafkaSink
+      .builder[String]()
+      .setBootstrapServers(bootstrapServer)
+      .setKafkaProducerConfig(Common.getProp)
+      .setRecordSerializer(KafkaRecordSerializationSchema.builder[String]()
+        .setTopic(sinkTopic)
+        .setKeySerializationSchema(new SimpleStringSchema())
+        .setValueSerializationSchema(new SimpleStringSchema())
+        .build()
+      )
+      .build()
+
+    stream.sinkTo(kafkaSink)
+      .name("sinkKafka")
+      .uid("sinkKafka")
 
 
     env.execute("RetentionAnalyze")
