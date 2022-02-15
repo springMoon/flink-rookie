@@ -6,10 +6,12 @@ import java.util
 import com.venn.util.DateTimeUtil
 import org.apache.flink.api.common.state.{MapState, MapStateDescriptor, ValueState, ValueStateDescriptor}
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.streaming.api.scala.OutputTag
 import org.apache.flink.streaming.api.scala.function.ProcessWindowFunction
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
+import org.apache.flink.api.scala._
 
 /**
  * user day retention analyze process function
@@ -23,6 +25,7 @@ class RetentionAnalyzeProcessFunction extends ProcessWindowFunction[UserLog, Str
   var mysqlUrl = "jdbc:mysql://localhost:3306/venn?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true"
   var mysqlUser = "root"
   var mysqlPass = "123456"
+  val exportBatch = 100
   var allUserMap = new util.HashMap[String, Int]()
   var lastUserMap = new util.HashMap[String, Int]()
   val currentUser = new util.HashMap[String, Int]()
@@ -31,6 +34,7 @@ class RetentionAnalyzeProcessFunction extends ProcessWindowFunction[UserLog, Str
   var lastUserState: ValueState[util.HashMap[String, Int]] = _
   var currentUserState: ValueState[util.HashMap[String, Int]] = _
 
+  val sideTag = new OutputTag[(String, util.HashMap[String, Int])]("side")
 
   /**
    * open: load all user and last day new user
@@ -44,7 +48,9 @@ class RetentionAnalyzeProcessFunction extends ProcessWindowFunction[UserLog, Str
     lastUserState = getRuntimeContext.getState(new ValueStateDescriptor[util.HashMap[String, Int]]("lastUser", classOf[util.HashMap[String, Int]]))
     currentUserState = getRuntimeContext.getState(new ValueStateDescriptor[util.HashMap[String, Int]]("currentUser", classOf[util.HashMap[String, Int]]))
 
+    // connect mysql
     reconnect()
+    // load history user
     loadUser()
   }
 
@@ -68,34 +74,64 @@ class RetentionAnalyzeProcessFunction extends ProcessWindowFunction[UserLog, Str
       lastUserMap = lastUserState.value()
     }
 
-
+    // loop window element, find last user and current user
     val it = elements.iterator
-
-    var lastUserLog = 0d
+    val lastUserLog = new util.HashMap[String, Int]
     while (it.hasNext) {
       val userLog = it.next()
       if (lastUserMap.containsKey(userLog.userId)) {
-        lastUserLog += 1l
+        lastUserLog.put(userLog.userId, 1)
       }
       if (!allUserMap.containsKey(userLog.userId)) {
         currentUser.put(userLog.userId, 1)
       }
     }
 
-    val day = DateTimeUtil.formatMillis(context.window.getStart, DateTimeUtil.YYYY_MM_DD)
+
+    // day time
+    val day = DateTimeUtil.formatMillis(context.currentWatermark.longValue(), DateTimeUtil.YYYY_MM_DD)
+    val time = DateTimeUtil.formatMillis(context.currentWatermark.longValue(), DateTimeUtil.HH_MM_SS)
+
 
     var str: String = null
-    if (lastUserMap.isEmpty) {
-      str = day + ",current," + currentUser.size()
-    } else {
-      str = day + ",current," + currentUser.size() + "," + lastUserLog / lastUserMap.size()
+    var retention: Double = 0
+    if (!lastUserMap.isEmpty) {
+      retention = lastUserLog.size().toDouble / lastUserMap.size()
     }
+    str = day + "," + time + "," + allUserMap.size() + "," + lastUserMap.size() + "," + currentUser.size() + "," + retention
     out.collect(str)
 
   }
 
+
+  /**
+   * output current day new user
+   *
+   * @param context
+   */
+  override def clear(context: Context): Unit = {
+    val window = context.window
+    LOG.info(String.format("window start : %s, end: %s, clear", DateTimeUtil.formatMillis(window.getStart, DateTimeUtil.YYYY_MM_DD_HH_MM_SS), DateTimeUtil.formatMillis(window.getEnd - 1, DateTimeUtil.YYYY_MM_DD_HH_MM_SS)))
+    // clear last user, add current user as last/all user map
+    lastUserMap.clear()
+    lastUserMap.putAll(currentUser)
+    allUserMap.putAll(currentUser)
+    lastUserState.update(lastUserMap)
+    allUserState.update(allUserMap)
+    // export current user to mysql userInfo
+    //    exportCurrentUser(window)
+    val day = DateTimeUtil.formatMillis(window.getStart, DateTimeUtil.YYYY_MM_DD)
+    context.output(sideTag, (day, currentUser))
+    //    currentUser.keySet().forEach(item => {
+    //      context.output(sideTag, (day, item))
+    //    })
+    // clear current user
+    currentUser.clear()
+  }
+
   /**
    * export current user to all user table
+   * 不考虑用户已存在
    */
   def exportCurrentUser(window: TimeWindow): Unit = {
     val sql = "insert into user_info(user_id, login_day) values(?, ?)"
@@ -110,7 +146,7 @@ class RetentionAnalyzeProcessFunction extends ProcessWindowFunction[UserLog, Str
 
       ps.addBatch()
       count += 1
-      if (count % 10 == 0) {
+      if (count % exportBatch == 0) {
         LOG.debug("add batch")
         ps.executeBatch()
       }
@@ -119,26 +155,6 @@ class RetentionAnalyzeProcessFunction extends ProcessWindowFunction[UserLog, Str
       LOG.debug("add last batch")
       ps.executeBatch()
     }
-  }
-
-  /**
-   * output current day new user
-   *
-   * @param context
-   */
-  override def clear(context: Context): Unit = {
-    val window = context.window
-    LOG.info(String.format("window start : %s, end: %s, clear", DateTimeUtil.formatMillis(window.getStart, DateTimeUtil.YYYY_MM_DD_HH_MM_SS), DateTimeUtil.formatMillis(window.getEnd, DateTimeUtil.YYYY_MM_DD_HH_MM_SS)))
-    // clear last user, add current user as last/all user map
-    lastUserMap.clear()
-    lastUserMap.putAll(currentUser)
-    allUserMap.putAll(currentUser)
-    lastUserState.update(lastUserMap)
-    allUserState.update(allUserMap)
-    // export current user to mysql userInfo
-    exportCurrentUser(window)
-    // clear current user
-    currentUser.clear()
   }
 
   def reconnect() = {

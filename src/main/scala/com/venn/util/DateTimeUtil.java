@@ -37,6 +37,8 @@ public final class DateTimeUtil {
 
     public static final String YYYY_MM_DD_HH_MM_SS_1 = "yyyy/MM/dd HH:mm:ss";
 
+    public static final String HH_MM_SS = "HH:mm:ss";
+
     private static HashMap<String, ThreadLocal<SimpleDateFormat>> factory = new HashMap<>();
 
     static {
@@ -46,6 +48,7 @@ public final class DateTimeUtil {
         factory.put(YYYY_MM_DD_HH_MM_SS_MS, ThreadLocal.withInitial(new SupplierSimpleDateFormat(YYYY_MM_DD_HH_MM_SS_MS)));
         factory.put(YYYY_MM_DD, ThreadLocal.withInitial(new SupplierSimpleDateFormat(YYYY_MM_DD)));
         factory.put(YYYY_MM_DD_HH_MM_SS_1, ThreadLocal.withInitial(new SupplierSimpleDateFormat(YYYY_MM_DD_HH_MM_SS_1)));
+        factory.put(HH_MM_SS, ThreadLocal.withInitial(new SupplierSimpleDateFormat(HH_MM_SS)));
     }
 
     private static class SupplierSimpleDateFormat implements Supplier<SimpleDateFormat> {
@@ -79,7 +82,9 @@ public final class DateTimeUtil {
             date = factory.get(YYYY_MM_DD_HH_MM_SS_MS).get().parse(value);
         } else if (DATE_TIME_DAY.matcher(value).matches()) {
             date = factory.get(YYYY_MM_DD).get().parse(value);
-        }else if (DATE_TIME_DAY.matcher(value).matches()) {
+        } else if (DATE_TIME_DAY.matcher(value).matches()) {
+            date = factory.get(YYYY_MM_DD_HH_MM_SS_1).get().parse(value);
+        } else if (DATE_TIME_DAY.matcher(value).matches()) {
             date = factory.get(YYYY_MM_DD_HH_MM_SS_1).get().parse(value);
         }
 

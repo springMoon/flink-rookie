@@ -1,23 +1,28 @@
 package com.venn.question.retention
 
 
+import java.sql.PreparedStatement
+import java.util
+
 import com.google.gson.JsonParser
 import com.venn.common.Common
 import com.venn.entity.KafkaSimpleStringRecord
 import com.venn.util.{DateTimeUtil, SimpleKafkaRecordDeserializationSchema}
 import org.apache.flink.api.common.eventtime._
-import org.apache.flink.api.common.functions.RichFlatMapFunction
+import org.apache.flink.api.common.functions.{FlatMapFunction, RichFlatMapFunction}
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.connector.jdbc.JdbcConnectionOptions.JdbcConnectionOptionsBuilder
+import org.apache.flink.connector.jdbc.{JdbcConnectionOptions, JdbcExecutionOptions, JdbcSink, JdbcStatementBuilder}
 import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, KafkaSink}
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
 import org.apache.flink.contrib.streaming.state.EmbeddedRocksDBStateBackend
 import org.apache.flink.runtime.state.storage.FileSystemCheckpointStorage
 import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.scala.{OutputTag, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.ContinuousEventTimeTrigger
@@ -35,8 +40,8 @@ object RetentionAnalyze {
   val bootstrapServer = "localhost:9092"
   val topic = "user_log"
   val sinkTopic = "user_log_sink"
-  val checkpointPath = "hdfs:///user/wuxu/checkpoint/RetentionAnalyze"
-  //  val checkpointPath = "file:///tmp/checkpoint/RetentionAnalyze"
+  //  val checkpointPath = "hdfs:///user/wuxu/checkpoint/RetentionAnalyze"
+  val checkpointPath = "file:///tmp/checkpoint/RetentionAnalyze"
 
   def main(args: Array[String]): Unit = {
 
@@ -59,6 +64,7 @@ object RetentionAnalyze {
       .setDeserializer(new SimpleKafkaRecordDeserializationSchema())
       .build()
 
+    // 不使用 IngestionTime 指定 watermark，后续从数据中提取时间戳和 watermark
     val source = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "source")
       .name("source")
       .uid("source")
@@ -72,7 +78,6 @@ object RetentionAnalyze {
 
       // parse json to UserLog
       override def flatMap(element: KafkaSimpleStringRecord, out: Collector[UserLog]): Unit = {
-        val userLog = null
         try {
           val jsonObject = jsonParse.parse(element.getValue).getAsJsonObject
           val userId = jsonObject.get("user_id").getAsString
@@ -80,7 +85,8 @@ object RetentionAnalyze {
           val itemId = jsonObject.get("item_id").getAsInt
           val behavior = jsonObject.get("behavior").getAsString
           val ts = jsonObject.get("ts").getAsString
-          val userLog = UserLog(userId, categoryId, itemId, behavior, ts)
+          val tsLong = DateTimeUtil.parse(ts).getTime
+          val userLog = UserLog(userId, categoryId, itemId, behavior, ts, tsLong)
 
           out.collect(userLog)
         } catch {
@@ -109,16 +115,15 @@ object RetentionAnalyze {
       //      })
       // default is IngestionTime, kafka source will add timestamp to StreamRecord,
       // if not set assignAscendingTimestamps, use StreamRecord' timestamp, so is ingestion time
-      .assignAscendingTimestamps(userLog => DateTimeUtil.parse(userLog.ts).getTime)
+      .assignAscendingTimestamps(userLog => userLog.tsLong)
       // create watermark by all elements
       .assignTimestampsAndWatermarks(new WatermarkStrategy[UserLog] {
         override def createWatermarkGenerator(context: WatermarkGeneratorSupplier.Context): WatermarkGenerator[UserLog] = {
           new WatermarkGenerator[UserLog] {
             var watermark: Watermark = new Watermark(Long.MinValue)
 
-            override def onEvent(event: UserLog, eventTimestamp: Long, output: WatermarkOutput): Unit = {
-              val timestamp = DateTimeUtil.parse(event.ts).getTime
-              watermark = new Watermark(timestamp - 1)
+            override def onEvent(element: UserLog, eventTimestamp: Long, output: WatermarkOutput): Unit = {
+              watermark = new Watermark(element.tsLong - 1)
               output.emitWatermark(watermark)
             }
 
@@ -146,7 +151,40 @@ object RetentionAnalyze {
       .name("process")
       .uid("process")
 
-    //    stream.print()
+    // sink current day user to mysql, cost a lot time
+    val sideTag = new OutputTag[(String, util.HashMap[String, Int])]("side")
+    val jdbcSink = JdbcSink
+      .sink("insert into user_info(user_id, login_day) values(?, ?)", new JdbcStatementBuilder[(String, String)] {
+        override def accept(ps: PreparedStatement, element: (String, String)): Unit = {
+          ps.setString(1, element._2)
+          ps.setString(2, element._1)
+        }
+      }, JdbcExecutionOptions.builder()
+        .withBatchSize(100)
+        .withBatchIntervalMs(200)
+        .withMaxRetries(5)
+        .build(),
+        new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+          .withUrl("jdbc:mysql://localhost:3306/venn?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true")
+          .withDriverName("com.mysql.cj.jdbc.Driver")
+          .withUsername("root")
+          .withPassword("123456")
+          .build())
+
+    stream.getSideOutput(sideTag)
+      .flatMap(new RichFlatMapFunction[(String, util.HashMap[String, Int]), (String, String)]() {
+        override def flatMap(element: (String, util.HashMap[String, Int]), out: Collector[(String, String)]): Unit = {
+          val day = element._1
+          val keySet = element._2.keySet()
+          keySet.forEach(item => {
+            out.collect((day, item))
+          })
+        }
+      })
+      .addSink(jdbcSink)
+      .name("jdbcSink")
+      .uid("jdbcSink")
+
 
     val kafkaSink = KafkaSink
       .builder[String]()
@@ -163,7 +201,6 @@ object RetentionAnalyze {
     stream.sinkTo(kafkaSink)
       .name("sinkKafka")
       .uid("sinkKafka")
-
 
     env.execute("RetentionAnalyze")
   }
