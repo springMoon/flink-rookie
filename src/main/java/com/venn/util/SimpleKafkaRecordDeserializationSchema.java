@@ -1,6 +1,7 @@
 package com.venn.util;
 
 import com.venn.entity.KafkaSimpleStringRecord;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema;
 import org.apache.flink.util.Collector;
@@ -15,6 +16,11 @@ public class SimpleKafkaRecordDeserializationSchema
         implements KafkaRecordDeserializationSchema<KafkaSimpleStringRecord> {
     private static final long serialVersionUID = -3765473065594331694L;
     private transient Deserializer<String> deserializer;
+
+    @Override
+    public void open(DeserializationSchema.InitializationContext context) throws Exception {
+
+    }
 
     @Override
     public void deserialize(
