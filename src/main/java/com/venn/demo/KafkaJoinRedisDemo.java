@@ -5,6 +5,7 @@ import com.venn.util.SimpleKafkaRecordDeserializationSchema;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.connector.kafka.source.KafkaSource;
+import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.AsyncDataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -14,6 +15,8 @@ import java.util.concurrent.TimeUnit;
 public class KafkaJoinRedisDemo {
 
     private static final String uri = "redis://localhost";
+    private static final String bootstrapServer = "localhost:9092";
+    private static final String topic = "user_log";
 
     public static void main(String[] args) throws Exception {
 
@@ -23,26 +26,25 @@ public class KafkaJoinRedisDemo {
         // kafka source
         KafkaSource<KafkaSimpleStringRecord> kafkaSource = KafkaSource
                 .<KafkaSimpleStringRecord>builder()
-                .setBootstrapServers("localhost:9092")
+                .setBootstrapServers(bootstrapServer)
                 .setDeserializer(new SimpleKafkaRecordDeserializationSchema())
-                .setTopics("event_topic_1")
+                .setStartingOffsets(OffsetsInitializer.latest())
+                .setTopics(topic)
                 .build();
 
+        // get value
         SingleOutputStreamOperator<String> source = env
                 .fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "kafkaSource")
-                .map(new MapFunction<KafkaSimpleStringRecord, String>() {
-                    @Override
-                    public String map(KafkaSimpleStringRecord value) throws Exception {
-                        return value.getValue();
-                    }
-                });
+                .map((MapFunction<KafkaSimpleStringRecord, String>) value -> value.getValue());
 
-        AsyncFunctionForRedis asyncFunctionForRedis = new AsyncFunctionForRedis(uri);
-        //这里使用的是无序反馈结果的方法，后面两个参数是请求超时时常和时间单位，还有一个最大并发数没有设置，如果超过了最大连接数，Flink会触发反压机制来抑制上游数据的接入，保证程序正常执行
-        AsyncDataStream
-                .unorderedWait(source, asyncFunctionForRedis, 5L, TimeUnit.SECONDS)
+        // async redis
+        AsyncRedisFunction asyncRedisFunction = new AsyncRedisFunction(uri);
+        SingleOutputStreamOperator<String> asyncStream = AsyncDataStream
+                .unorderedWait(source, asyncRedisFunction, 5L, TimeUnit.SECONDS);
+
+        // print result
+        asyncStream
                 .print("match redis");
-
 
         env.execute("kafkaJoinRedis");
     }
