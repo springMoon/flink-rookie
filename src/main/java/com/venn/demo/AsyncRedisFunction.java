@@ -13,13 +13,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-public class AsyncFunctionForRedis extends RichAsyncFunction<String, String> {
+/**
+ * async redis function
+ */
+public class AsyncRedisFunction extends RichAsyncFunction<String, String> {
     private RedisAsyncCommands<String, String> async;
     private String url;
     private StatefulRedisConnection<String, String> connection;
     private RedisClient redisClient;
 
-    public AsyncFunctionForRedis(String url) {
+    public AsyncRedisFunction(String url) {
         this.url = url;
     }
 
@@ -67,10 +70,13 @@ public class AsyncFunctionForRedis extends RichAsyncFunction<String, String> {
                 e.printStackTrace();
             }
             // if get exception
-            return "nothing";
+            return "exception";
         }).thenAccept(new Consumer<String>() {
             @Override
             public void accept(String result) {
+                if (result == null) {
+                    result = "nothing";
+                }
                 // return result
                 resultFuture.complete(Collections.singleton(input + " - " + result));
             }
