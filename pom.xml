@@ -11,7 +11,7 @@
     <properties>
         <flink.version>1.14.3</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
-        <hadoop.version>3.1.1</hadoop.version>
+        <hadoop.version>3.2.3</hadoop.version>
         <elasticsearch.version>7.2.0</elasticsearch.version>
         <flink-shaded-jackson.version>2.9.8-7.0</flink-shaded-jackson.version>
         <hbase.version>2.1.4</hbase.version>
