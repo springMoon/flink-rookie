@@ -1,5 +1,6 @@
 package com.venn.demo;
 
+import com.google.gson.JsonParser;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -21,6 +22,7 @@ public class AsyncRedisFunction extends RichAsyncFunction<String, String> {
     private String url;
     private StatefulRedisConnection<String, String> connection;
     private RedisClient redisClient;
+    private JsonParser jsonParser;
 
     public AsyncRedisFunction(String url) {
         this.url = url;
@@ -46,6 +48,8 @@ public class AsyncRedisFunction extends RichAsyncFunction<String, String> {
 
         // async
         async = connection.async();
+
+        jsonParser = new JsonParser();
     }
 
 
@@ -53,8 +57,9 @@ public class AsyncRedisFunction extends RichAsyncFunction<String, String> {
     @Override
     public void asyncInvoke(String input, ResultFuture<String> resultFuture) throws Exception {
 
+        String userId = jsonParser.parse(input).getAsJsonObject().get("user_id").getAsString();
         // query string
-        RedisFuture<String> redisFuture = async.get(input);
+        RedisFuture<String> redisFuture = async.get(userId);
         //  query hash
 //        RedisFuture<String> redisFuture = async.hget("key", input);
         // get all

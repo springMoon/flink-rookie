@@ -1,4 +1,4 @@
-package com.venn.stream.demo.process
+package com.venn.demo
 
 import com.venn.common.Common
 import org.apache.flink.api.common.serialization.SimpleStringSchema
