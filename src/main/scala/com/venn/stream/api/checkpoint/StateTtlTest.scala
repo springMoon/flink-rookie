@@ -1,16 +1,20 @@
 package com.venn.stream.api.checkpoint
 
-import java.time.Duration
+import com.venn.common.Common
 
+import java.time.Duration
 import com.venn.entity.KafkaSimpleStringRecord
 import com.venn.util.{DateTimeUtil, SimpleKafkaRecordDeserializationSchema}
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
+import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.StateTtlConfig.{StateVisibility, UpdateType}
 import org.apache.flink.api.common.state.{StateTtlConfig, ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.time.Time
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.connector.base.DeliveryGuarantee
+import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, KafkaSink}
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
 import org.apache.flink.contrib.streaming.state.EmbeddedRocksDBStateBackend
@@ -72,20 +76,22 @@ object StateTtlTest {
     // rocksdb
     env.setStateBackend(new EmbeddedRocksDBStateBackend(true))
 
+    val bootstrapServer = "localhost:9092"
+    val topic = "user_log"
     // source
     val source = KafkaSource
       .builder[KafkaSimpleStringRecord]()
       // stop job when consumer to latest offset ?
       //      .setBounded(OffsetsInitializer.latest())
       //      .setUnbounded(OffsetsInitializer.latest())
-      .setBootstrapServers("localhost:9092")
+      .setBootstrapServers(bootstrapServer)
       .setGroupId("ttl")
-      .setTopics("user_log")
+      .setTopics(topic)
       .setStartingOffsets(OffsetsInitializer.latest())
       .setDeserializer(new SimpleKafkaRecordDeserializationSchema())
       .build()
 
-    env.fromSource(source, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(5)), "source")
+    val stream = env.fromSource(source, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(5)), "source")
       .name("source")
       .uid("source")
       .keyBy(new KeySelector[KafkaSimpleStringRecord, String] {
@@ -130,11 +136,29 @@ object StateTtlTest {
             println(time + " - set valueState value is not null, value : " + valueState.value())
             valueState.update(element.getValue)
           }
+
+          out.collect(element.getValue)
           //          }
-
-
         }
       })
+
+    val prop = Common.getProp
+    val kafkaSink = KafkaSink
+      .builder()
+      .setBootstrapServers(bootstrapServer)
+      .setRecordSerializer(
+        KafkaRecordSerializationSchema.builder[String]()
+          .setTopic(topic + "_sink")
+          .setKeySerializationSchema(new SimpleStringSchema())
+          .setValueSerializationSchema(new SimpleStringSchema())
+          .build()
+      )
+      .setDeliverGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
+      .setKafkaProducerConfig(prop)
+      .build()
+
+
+    stream.sinkTo(kafkaSink)
 
     env.execute("StateTtlTest")
   }
