@@ -71,7 +71,8 @@ object StateTtlTest {
     env.getCheckpointConfig.setExternalizedCheckpointCleanup(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
 
     // storage path
-    val checkpointStorage = new FileSystemCheckpointStorage("hdfs:///user/wuxu/checkpoint/state_ttl")
+    //val checkpointStorage = new FileSystemCheckpointStorage("hdfs:///user/wuxu/checkpoint/state_ttl")
+    val checkpointStorage = new FileSystemCheckpointStorage("file:///opt/data/checkpoint/ttl_test")
     env.getCheckpointConfig.setCheckpointStorage(checkpointStorage)
     // rocksdb
     env.setStateBackend(new EmbeddedRocksDBStateBackend(true))
@@ -133,7 +134,7 @@ object StateTtlTest {
             valueState.update(element.getValue)
           } else {
             // get value
-            println(time + " - set valueState value is not null, value : " + valueState.value())
+//            println(time + " - set valueState value is not null, value : " + valueState.value())
             valueState.update(element.getValue)
           }
 
@@ -143,12 +144,15 @@ object StateTtlTest {
       })
 
     val prop = Common.getProp
+    // 15 min
+    prop.setProperty("transaction.timeout.ms", "900000")
     val kafkaSink = KafkaSink
       .builder()
       .setBootstrapServers(bootstrapServer)
+      .setTransactionalIdPrefix("StateTtlTest")
       .setRecordSerializer(
         KafkaRecordSerializationSchema.builder[String]()
-          .setTopic(topic + "_sink")
+          .setTopic(topic + "_sink_1")
           .setKeySerializationSchema(new SimpleStringSchema())
           .setValueSerializationSchema(new SimpleStringSchema())
           .build()
