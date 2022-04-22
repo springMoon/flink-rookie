@@ -63,6 +63,7 @@ object DayWindow {
           } catch {
             case _ => {
               LOG.warn("parse json error: ", element)
+              return
             }
           }
           var userId: String = null
