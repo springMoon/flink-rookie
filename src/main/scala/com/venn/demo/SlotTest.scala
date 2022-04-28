@@ -1,4 +1,4 @@
-package com.venn.question.processAndEvent
+package com.venn.demo
 
 import com.google.gson.JsonParser
 import com.venn.entity.KafkaSimpleStringRecord
@@ -6,19 +6,30 @@ import com.venn.question.retention.UserLog
 import com.venn.util.{DateTimeUtil, SimpleKafkaRecordDeserializationSchema}
 import org.apache.flink.api.common.eventtime._
 import org.apache.flink.api.common.functions.RichFlatMapFunction
-import org.apache.flink.api.java.functions.KeySelector
+import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
-import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.windowing.assigners.{TumblingEventTimeWindows, TumblingProcessingTimeWindows}
-import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 
-object BothProcessAndEventTime {
+/**
+ * test slot: diff slot share group operator cannot share group
+ *
+ * 不同的 slot share group 里面的 算子，不能共享 slot
+ * slot share group 生效范围： 当前算子还后续 算子
+ * like :   source -> map -> sink
+ *          map.slotSharingGroup(aa)
+ *          default slot sharing group:  source
+ *          aa slot sharing group: map -> sink
+ *
+ * 默认所有算子在 'default' slot sharing group，即 设置 slotSharingGroup('default'), 也在 default 里面
+ * 
+ */
+object SlotTest {
 
   val LOG = LoggerFactory.getLogger("BothProcessAndEventTime")
   val bootstrapServer = "localhost:9092"
@@ -44,7 +55,6 @@ object BothProcessAndEventTime {
     val source = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "source")
       .name("source")
       .uid("source")
-      .disableChaining()
 
     val stream = source.flatMap(new RichFlatMapFunction[KafkaSimpleStringRecord, UserLog] {
       var jsonParse: JsonParser = _
@@ -73,59 +83,21 @@ object BothProcessAndEventTime {
 
       }
     })
-      .name("map")
-      .uid("map")
-      // default is IngestionTime, kafka source will add timestamp to StreamRecord,
-      // if not set assignAscendingTimestamps, use StreamRecord' timestamp, so is ingestion time
-//            .assignAscendingTimestamps(userLog => userLog.tsLong)
-            // create watermark by all elements
-//      .assignTimestampsAndWatermarks(new WatermarkStrategy[UserLog] {
-//        override def createWatermarkGenerator(context: WatermarkGeneratorSupplier.Context): WatermarkGenerator[UserLog] = {
-//          new WatermarkGenerator[UserLog] {
-//            var watermark: Watermark = new Watermark(Long.MinValue)
-//
-//            override def onEvent(element: UserLog, eventTimestamp: Long, output: WatermarkOutput): Unit = {
-//              watermark = new Watermark(element.tsLong - 1)
-//              output.emitWatermark(watermark)
-//            }
-//
-//            override def onPeriodicEmit(output: WatermarkOutput): Unit = {
-//              output.emitWatermark(watermark)
-//            }
-//          }
-//        }
-//      })
-      // key all data to one key
-      .keyBy(new KeySelector[UserLog, String] {
-        override def getKey(element: UserLog): String = {
-          "1"
-        }
-      })
+      .name("map1")
+      .uid("map1")
+      .map(ff => ff.userId)
+      .name("map2")
+      .uid("map2")
+      .slotSharingGroup("default")
 
 
-    // event
-    stream
-      .window(TumblingEventTimeWindows.of(Time.minutes(1)))
-      //      .window(TumblingProcessingTimeWindows.of(Time.seconds(10)))
-      .process(new SimpleProcessFunction("eventTime"))
-      .name("event")
-      .uid("event")
-      .slotSharingGroup("aa")
-      .disableChaining()
-      .print()
+    val sink = new FlinkKafkaProducer[String](bootstrapServer, topic + "_sink", new SimpleStringSchema())
 
-    // process
-    stream
-      .window(TumblingProcessingTimeWindows.of(Time.minutes(1)))
-      .process(new SimpleProcessFunction("processTime"))
-      .name("process")
-      .uid("process")
-      .disableChaining()
-      .print()
+    stream.addSink(sink)
+      .name("sink")
+      .uid("sink")
 
-
-    env.execute("BothProcessAndEventTime")
-
+    env.execute("slotTest")
   }
 
 }
