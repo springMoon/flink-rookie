@@ -3,9 +3,9 @@ package com.venn.demo
 import com.google.gson.JsonParser
 import com.venn.common.Common
 import com.venn.entity.KafkaSimpleStringRecord
-import com.venn.question.retention.RetentionAnalyze.{bootstrapServer, sinkTopic}
 import com.venn.question.retention.UserLog
 import com.venn.util.{DateTimeUtil, SimpleKafkaRecordDeserializationSchema}
+import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.common.eventtime._
 import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.api.common.serialization.SimpleStringSchema
@@ -16,29 +16,16 @@ import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, Ka
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 
-import java.util.Properties
-
 /**
- * test slot: diff slot share group operator cannot share group
- *
- * 不同的 slot share group 里面的 算子，不能共享 slot
- * slot share group 生效范围： 当前算子还后续 算子
- * like :   source -> map -> sink
- *          map.slotSharingGroup(aa)
- *          default slot sharing group:  source
- *          aa slot sharing group: map -> sink
- *
- * 默认所有算子在 'default' slot sharing group，即 设置 slotSharingGroup('default'), 也在 default 里面
- *
- *
  * 测试 同一个程序跑，同时跑多个，遇到的 kafka 事务 id 过期的问题
  *
+ * Caused by: org.apache.flink.util.FlinkRuntimeException: Failed to send data to Kafka user_log_sink-0@-1 with FlinkKafkaInternalProducer{transactionalId='kafka-sink-0-1', inTransaction=true, closed=false}
+
  */
-object SlotTest {
+object KafkaProducerTest {
 
   val LOG = LoggerFactory.getLogger("BothProcessAndEventTime")
   val bootstrapServer = "localhost:9092"
@@ -48,7 +35,14 @@ object SlotTest {
   def main(args: Array[String]): Unit = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     //        env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime)
-    env.setParallelism(1)
+//    env.setParallelism(1)
+
+    val conf = new Configuration
+    conf.setString("parallelism.default", "4")
+    env.configure(conf)
+
+//    env.setRuntimeMode(RuntimeExecutionMode.BATCH)
+
     if(args.length == 1){
       sinkTopic = args(0)
     }
@@ -103,7 +97,6 @@ object SlotTest {
       .uid("map2")
 
 
-
     val prop = Common.getProp
     prop.setProperty("transaction.timeout.ms", "600000")
 
@@ -117,7 +110,7 @@ object SlotTest {
         .setValueSerializationSchema(new SimpleStringSchema())
         .build()
       )
-//      .setTransactionalIdPrefix("xxx")
+      .setTransactionalIdPrefix("xxx" + System.currentTimeMillis())
       .setDeliverGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
       .build()
 
