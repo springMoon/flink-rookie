@@ -38,6 +38,7 @@ object BothProcessAndEventTime {
       .setTopics(topic)
       .setStartingOffsets(OffsetsInitializer.latest())
       .setDeserializer(new SimpleKafkaRecordDeserializationSchema())
+//      .setClientIdPrefix("source")
       .build()
 
     // 不使用 IngestionTime 指定 watermark，后续从数据中提取时间戳和 watermark
