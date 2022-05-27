@@ -2,7 +2,7 @@ package com.venn.question.dayWindow
 
 import com.google.gson.{JsonObject, JsonParser}
 import com.venn.common.Common
-import com.venn.entity.{Behavior, StreamElement}
+import com.venn.entity.StreamElement
 import com.venn.question.retention.UserLog
 import com.venn.source.TumblingEventTimeWindows
 import com.venn.util.DateTimeUtil
@@ -14,16 +14,14 @@ import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
-import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.scala.function.{ProcessAllWindowFunction, ProcessWindowFunction}
+import org.apache.flink.streaming.api.scala.function.ProcessAllWindowFunction
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 
 import java.time.Duration
-import java.util
 
 /**
  * flink day window, full data not exists
