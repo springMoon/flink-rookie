@@ -10,6 +10,7 @@ import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, Ka
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 
@@ -30,12 +31,12 @@ object KafkaSinkTest {
   def main(args: Array[String]): Unit = {
 
     val topic = "user_log"
-    val sinkTopic = "user_log_sink"
+    val sinkTopic = "user_log_sink_1"
 
     // env
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     // global parllelism
-    val parallelism = 1
+    val parallelism = 4
     env.setParallelism(parallelism)
 
     // kafka source
@@ -54,7 +55,8 @@ object KafkaSinkTest {
       .setKafkaProducerConfig(Common.getProp)
       .setRecordSerializer(KafkaRecordSerializationSchema.builder[String]()
         .setTopic(sinkTopic)
-        .setKeySerializationSchema(new SimpleStringSchema())
+        // 不指定 key 的序列号器，key 会为 空
+//        .setKeySerializationSchema(new SimpleStringSchema())
         .setValueSerializationSchema(new SimpleStringSchema())
         .build()
       )
@@ -66,6 +68,8 @@ object KafkaSinkTest {
 
     // map, add current subtask index
     val mapStream = sourceStream
+      // rebalance data to all parallelisn
+      .rebalance
       .flatMap(new RichFlatMapFunction[String, String] {
         override def flatMap(element: String, out: Collector[String]): Unit = {
           val parallelism = getRuntimeContext.getIndexOfThisSubtask
@@ -77,12 +81,12 @@ object KafkaSinkTest {
       .uid("flatMap")
 
     // sink to kafka, new api
-    mapStream.sinkTo(kafkaSink)
+//    mapStream.sinkTo(kafkaSink)
 
     // sink to kafka, old api
-    //    val kafkaProducer = new FlinkKafkaProducer[String](bootstrapServer,sinkTopic, new SimpleStringSchema())
-    //    mapStream.addSink(kafkaProducer)
-    //      .setParallelism(parallelism)
+        val kafkaProducer = new FlinkKafkaProducer[String](bootstrapServer,sinkTopic, new SimpleStringSchema())
+        mapStream.addSink(kafkaProducer)
+          .setParallelism(parallelism)
 
     env.execute("KafkaSinkTest")
   }
