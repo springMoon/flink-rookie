@@ -17,6 +17,7 @@ import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsIni
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.scala.function.ProcessAllWindowFunction
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.api.windowing.triggers.ContinuousEventTimeTrigger
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
@@ -54,7 +55,7 @@ object DayWindowFullData {
 
     val sourceStream = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "kafkaSource")
 
-    sourceStream
+    val stream = sourceStream
       .flatMap(new RichFlatMapFunction[String, StreamElement[UserLog]] {
 
         var jsonParse: JsonParser = _
@@ -145,7 +146,8 @@ object DayWindowFullData {
       //          out.collect(key + "," + coun)
       //        }
       //      })
-      .windowAll(TumblingEventTimeWindows.of(Time.minutes(1)))
+      .windowAll(TumblingEventTimeWindows.of(Time.days(1)))
+      .trigger(ContinuousEventTimeTrigger.of(Time.seconds(5)))
       .process(new ProcessAllWindowFunction[StreamElement[UserLog], String, TimeWindow] {
 
         override def process(context: Context, elements: Iterable[StreamElement[UserLog]], out: Collector[String]): Unit = {
