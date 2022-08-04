@@ -1,8 +1,10 @@
 package com.venn.source.mysql.cdc;
 
+import com.ververica.cdc.connectors.mysql.source.MySqlSource;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import com.alibaba.ververica.cdc.connectors.mysql.MySQLSource;
+
+import java.util.Properties;
 
 /**
  * mysql cdc demo
@@ -10,25 +12,29 @@ import com.alibaba.ververica.cdc.connectors.mysql.MySQLSource;
 public class MySqlBinlogSourceExample {
     public static void main(String[] args) throws Exception {
 
-        SourceFunction<String> sourceFunction = MySQLSource.<String>builder()
+        Properties prop = new Properties();
+        prop.setProperty("debezium.io.debezium.connector.mysql.SchemaChangeKey","true");
+        MySqlSource<String> sourceFunction = MySqlSource.<String>builder()
                 .hostname("localhost")
                 .port(3306)
                 // 获取两个数据库的所有表
-                .databaseList("venn", "venn1")
-//                .tableList("user_log")
+                .databaseList("venn")
+                .tableList("venn.user_log_1")
                 .username("root")
                 .password("123456")
                 // 自定义 解析器，讲数据解析成 json
                 .deserializer(new CommonStringDebeziumDeserializationSchema("localhost", 3306))
+                .debeziumProperties(prop)
                 .build();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
+        env.setParallelism(1);
         env
-                .addSource(sourceFunction)
+                .fromSource(sourceFunction, WatermarkStrategy.noWatermarks(), "cdc")
                 .map(str -> str)
+                .print()
                 // 将数据发送到不同的 topic
-                .addSink(new CommonKafkaSink())
+//                .addSink(new CommonKafkaSink())
                 .setParallelism(1);
 
         env.execute();

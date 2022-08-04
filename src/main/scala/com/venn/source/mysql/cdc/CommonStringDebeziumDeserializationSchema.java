@@ -1,6 +1,6 @@
 package com.venn.source.mysql.cdc;
 
-import com.alibaba.ververica.cdc.debezium.DebeziumDeserializationSchema;
+import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
 import com.google.gson.JsonObject;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
