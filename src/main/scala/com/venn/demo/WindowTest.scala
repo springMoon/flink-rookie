@@ -1,7 +1,6 @@
 package com.venn.demo
 
 import java.time.Duration
-
 import com.google.gson.{JsonObject, JsonParser}
 import com.venn.entity.{Behavior, StreamElement}
 import com.venn.util.DateTimeUtil
@@ -20,20 +19,22 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 
+import java.util.regex.Pattern
+
 object WindowTest {
 
   val LOG = LoggerFactory.getLogger("DayWindow")
 
   def main(args: Array[String]): Unit = {
 
-    val topic = "user_log"
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
+    val topic = "deepexi_*"
 
-    val bootstrapServer = "localhost:9092"
+    val bootstrapServer = "dcmp12:9092"
     val kafkaSource = KafkaSource.builder[String]()
       .setBootstrapServers(bootstrapServer)
-      .setTopics(topic)
+      .setTopicPattern(Pattern.compile(topic))
       .setGroupId("day_window")
       //      .setStartingOffsets(OffsetsInitializer.committedOffsets())
       .setStartingOffsets(OffsetsInitializer.latest())
@@ -46,7 +47,7 @@ object WindowTest {
 
     val filter = sourceStream
       .disableChaining()
-      .flatMap(new RichFlatMapFunction[String, StreamElement[Behavior]] {
+      .flatMap(new RichFlatMapFunction[String, StreamElement[String]] {
 
         var jsonParse: JsonParser = _
 
@@ -55,88 +56,55 @@ object WindowTest {
           jsonParse = new JsonParser
         }
 
-        override def flatMap(element: String, out: Collector[StreamElement[Behavior]]): Unit = {
+        override def flatMap(element: String, out: Collector[StreamElement[String]]): Unit = {
 
-          var jsonObject: JsonObject = null
-          try {
-            jsonObject = jsonParse.parse(element).getAsJsonObject
-          } catch {
-            case _: Throwable =>
-              LOG.warn("parse json error: ", element)
-          }
-          var userId: String = null
-          if (jsonObject.has("user_id")) {
-            userId = jsonObject.get("user_id").getAsString
-          }
-          var url: String = null
-          if (jsonObject.has("url")) {
-            url = jsonObject.get("url").getAsString
-          }
-          var ts: Long = -1
-          if (jsonObject.has("ts")) {
-            val tmp = jsonObject.get("ts").getAsString
-            ts = DateTimeUtil.parse(tmp).getTime
-          }
+          val ele = new StreamElement[String](element, System.currentTimeMillis())
 
-          val behavior = new Behavior(userId, url, ts)
-          val record = new StreamElement[Behavior](behavior, System.currentTimeMillis())
-
-          out.collect(record)
+          out.collect(ele)
         }
       })
       .name("flatMap")
       .uid("flatMap")
       .disableChaining()
-      .filter(new RichFilterFunction[StreamElement[Behavior]] {
+      .filter(new RichFilterFunction[StreamElement[String]] {
         var INTERVAL: Long = _
 
         override def open(parameters: Configuration): Unit = {
           INTERVAL = 10 * 60 * 1000
         }
 
-        override def filter(element: StreamElement[Behavior]): Boolean = {
-          // user_id 不为空，长度大于 8 位
-          if (StringUtils.isEmpty(element.data.getUserId) || element.getData.getUserId.length < 8) {
-            return false
-          }
-          // url ignore
-          // latest 10 minute & less than current time
-          // todo remove comment
-          //          val current = System.currentTimeMillis()
-          //          if (current - element.data.getTs <= INTERVAL && element.data.getTs <= current) {
-          //            return false
-          //          }
+        override def filter(element: StreamElement[String]): Boolean = {
           true
         }
       })
       .name("filter")
       .uid("filter")
-      .disableChaining()
-
-      .assignTimestampsAndWatermarks(WatermarkStrategy
-        // 固定延迟时间
-        .forBoundedOutOfOrderness(Duration.ofMillis(1))
-        //      .forMonotonousTimestamps()
-        .withTimestampAssigner(TimestampAssignerSupplier.of(new SerializableTimestampAssigner[StreamElement[Behavior]] {
-          override def extractTimestamp(element: StreamElement[Behavior], recordTimestamp: Long): Long =
-            element.getData.getTs
-        }))
-        .withIdleness(Duration.ofSeconds(100))
-      )
+//      .disableChaining()
+//
+//      .assignTimestampsAndWatermarks(WatermarkStrategy
+//        // 固定延迟时间
+//        .forBoundedOutOfOrderness(Duration.ofMillis(1))
+//        //      .forMonotonousTimestamps()
+//        .withTimestampAssigner(TimestampAssignerSupplier.of(new SerializableTimestampAssigner[StreamElement[Behavior]] {
+//          override def extractTimestamp(element: StreamElement[String], recordTimestamp: Long): Long =
+//            element.getData.getTs
+//        }))
+//        .withIdleness(Duration.ofSeconds(100))
+//      )
       //      .assignTimestampsAndWatermarks(AssignerWithPunctuatedWatermarksAdapter[StreamElement[Behavior]])
-      .process(new ProcessFunction[StreamElement[Behavior], String]() {
-        override def processElement(element: StreamElement[Behavior], ctx: ProcessFunction[StreamElement[Behavior], String]#Context, out: Collector[String]): Unit = {
+      .process(new ProcessFunction[StreamElement[String], String]() {
+        override def processElement(element: StreamElement[String], ctx: ProcessFunction[StreamElement[String], String]#Context, out: Collector[String]): Unit = {
           val ts = ctx.timestamp()
           val watermark = ctx.timerService().currentWatermark()
 
-          println("event : " + element.data.getTs + ", ts: " + ts + ", watermark : " + watermark + ", minus : " + (ts - watermark))
+          println("element : " + element)
 
-          out.collect(element.toString)
+          out.collect(element.getData)
         }
       })
     //      .print
 
-    val sink = new FlinkKafkaProducer[String](bootstrapServer, topic + "_sink", new SimpleStringSchema())
+    val sink = new FlinkKafkaProducer[String](bootstrapServer,  "window_test_sink", new SimpleStringSchema())
 
     filter.addSink(sink)
 

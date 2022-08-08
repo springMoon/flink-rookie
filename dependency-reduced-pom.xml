@@ -56,7 +56,7 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-streaming-java_2.12</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -76,10 +76,6 @@
           <groupId>org.apache.flink</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>flink-shaded-guava</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-        <exclusion>
           <artifactId>commons-math3</artifactId>
           <groupId>org.apache.commons</groupId>
         </exclusion>
@@ -88,7 +84,7 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-streaming-scala_2.12</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -108,7 +104,7 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-table-runtime_2.12</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -132,7 +128,7 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-table-planner_2.12</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -144,7 +140,7 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-table-api-java-bridge_2.12</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -160,7 +156,7 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-table-api-scala_2.12</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -184,13 +180,13 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-table-api-scala-bridge_2.12</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-table-common</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -210,18 +206,8 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-connector-kafka_2.12</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>flink-connector-base</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>kafka-clients</artifactId>
-          <groupId>org.apache.kafka</groupId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
@@ -236,18 +222,6 @@
         <exclusion>
           <artifactId>netty-all</artifactId>
           <groupId>io.netty</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>guava</artifactId>
-          <groupId>com.google.guava</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jetty-server</artifactId>
-          <groupId>org.eclipse.jetty</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jetty-util</artifactId>
-          <groupId>org.eclipse.jetty</groupId>
         </exclusion>
         <exclusion>
           <artifactId>jetty-util-ajax</artifactId>
@@ -290,24 +264,12 @@
           <groupId>log4j</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>protobuf-java</artifactId>
-          <groupId>com.google.protobuf</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>javax.servlet-api</artifactId>
-          <groupId>javax.servlet</groupId>
-        </exclusion>
-        <exclusion>
           <artifactId>htrace-core4</artifactId>
           <groupId>org.apache.htrace</groupId>
         </exclusion>
         <exclusion>
           <artifactId>leveldbjni-all</artifactId>
           <groupId>org.fusesource.leveldbjni</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jackson-databind</artifactId>
-          <groupId>com.fasterxml.jackson.core</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -334,10 +296,6 @@
           <groupId>commons-collections</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>jetty-servlet</artifactId>
-          <groupId>org.eclipse.jetty</groupId>
-        </exclusion>
-        <exclusion>
           <artifactId>jetty-webapp</artifactId>
           <groupId>org.eclipse.jetty</groupId>
         </exclusion>
@@ -359,10 +317,6 @@
         </exclusion>
         <exclusion>
           <artifactId>commons-configuration2</artifactId>
-          <groupId>org.apache.commons</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>commons-lang3</artifactId>
           <groupId>org.apache.commons</groupId>
         </exclusion>
         <exclusion>
@@ -414,10 +368,6 @@
           <groupId>com.fasterxml.woodstox</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>guava</artifactId>
-          <groupId>com.google.guava</groupId>
-        </exclusion>
-        <exclusion>
           <artifactId>commons-cli</artifactId>
           <groupId>commons-cli</groupId>
         </exclusion>
@@ -432,18 +382,6 @@
         <exclusion>
           <artifactId>commons-io</artifactId>
           <groupId>commons-io</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>javax.servlet-api</artifactId>
-          <groupId>javax.servlet</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jetty-server</artifactId>
-          <groupId>org.eclipse.jetty</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jetty-util</artifactId>
-          <groupId>org.eclipse.jetty</groupId>
         </exclusion>
         <exclusion>
           <artifactId>jersey-core</artifactId>
@@ -466,16 +404,8 @@
           <groupId>commons-lang</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>protobuf-java</artifactId>
-          <groupId>com.google.protobuf</groupId>
-        </exclusion>
-        <exclusion>
           <artifactId>htrace-core4</artifactId>
           <groupId>org.apache.htrace</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jackson-databind</artifactId>
-          <groupId>com.fasterxml.jackson.core</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -546,10 +476,6 @@
           <groupId>org.apache.yetus</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>commons-lang3</artifactId>
-          <groupId>org.apache.commons</groupId>
-        </exclusion>
-        <exclusion>
           <artifactId>zookeeper</artifactId>
           <groupId>org.apache.zookeeper</groupId>
         </exclusion>
@@ -566,23 +492,15 @@
           <groupId>commons-io</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>protobuf-java</artifactId>
-          <groupId>com.google.protobuf</groupId>
-        </exclusion>
-        <exclusion>
           <artifactId>htrace-core4</artifactId>
           <groupId>org.apache.htrace</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jackson-databind</artifactId>
-          <groupId>com.fasterxml.jackson.core</groupId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-scala_2.12</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -618,13 +536,13 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-json</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-runtime-web_2.12</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -639,16 +557,12 @@
           <artifactId>flink-runtime</artifactId>
           <groupId>org.apache.flink</groupId>
         </exclusion>
-        <exclusion>
-          <artifactId>flink-shaded-guava</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-connector-jdbc_2.12</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -659,30 +573,14 @@
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
-      <artifactId>flink-connector-pulsar_2.12</artifactId>
-      <version>1.14.3</version>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>pulsar-client-all</artifactId>
-          <groupId>org.apache.pulsar</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>flink-connector-base</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.flink</groupId>
       <artifactId>flink-csv</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-connector-hive_2.12</artifactId>
-      <version>1.14.3</version>
+      <version>1.14.4</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -754,14 +652,6 @@
           <groupId>org.codehaus.groovy</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>jackson-annotations</artifactId>
-          <groupId>com.fasterxml.jackson.core</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jackson-core</artifactId>
-          <groupId>com.fasterxml.jackson.core</groupId>
-        </exclusion>
-        <exclusion>
           <artifactId>datanucleus-core</artifactId>
           <groupId>org.datanucleus</groupId>
         </exclusion>
@@ -801,17 +691,13 @@
           <artifactId>commons-io</artifactId>
           <groupId>commons-io</groupId>
         </exclusion>
-        <exclusion>
-          <artifactId>jackson-databind</artifactId>
-          <groupId>com.fasterxml.jackson.core</groupId>
-        </exclusion>
       </exclusions>
     </dependency>
   </dependencies>
   <properties>
     <target.java.version>1.8</target.java.version>
     <hive.version>3.1.0</hive.version>
-    <flink.version>1.14.3</flink.version>
+    <flink.version>1.14.4</flink.version>
     <flink-shaded-jackson.version>2.9.8-7.0</flink-shaded-jackson.version>
     <lettuce.version>5.0.5.RELEASE</lettuce.version>
     <gson.version>2.2.4</gson.version>
@@ -819,7 +705,7 @@
     <hbase.version>2.1.4</hbase.version>
     <elasticsearch.version>7.2.0</elasticsearch.version>
     <hadoop.version>3.1.1</hadoop.version>
-    <flink.cdc.version>1.3.0</flink.cdc.version>
-    <mysql-connector.version>5.1.47</mysql-connector.version>
+    <flink.cdc.version>2.2.0</flink.cdc.version>
+    <mysql-connector.version>8.0.21</mysql-connector.version>
   </properties>
 </project>

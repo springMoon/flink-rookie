@@ -15,11 +15,17 @@ public class CommonKafkaSink extends RichSinkFunction<String> {
     protected static final Logger LOG = LoggerFactory.getLogger(CommonKafkaSink.class);
     private transient KafkaProducer<String, String> kafkaProducer;
     private transient JsonParser parser;
+    private final String bootstrapServer;
+
+    public CommonKafkaSink(String bootstrapServer) {
+        this.bootstrapServer = bootstrapServer;
+    }
+
 
     @Override
     public void open(Configuration parameters) {
         Properties prop = new Properties();
-        prop.put("bootstrap.servers", "localhost:9092");
+        prop.put("bootstrap.servers", bootstrapServer);
         prop.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         prop.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         prop.put("request.timeout.ms", "10");
@@ -36,6 +42,7 @@ public class CommonKafkaSink extends RichSinkFunction<String> {
         String table = jsonObject.get("table").getAsString();
         // topic 不存在就自动创建
         String topic = db + "_" + table;
+        topic = db;
         ProducerRecord<String, String> record = new ProducerRecord<>(topic, element);
         kafkaProducer.send(record);
     }
