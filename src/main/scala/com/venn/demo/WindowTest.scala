@@ -31,6 +31,7 @@ object WindowTest {
     env.setParallelism(1)
     val topic = "deepexi_*"
 
+
     val bootstrapServer = "dcmp12:9092"
     val kafkaSource = KafkaSource.builder[String]()
       .setBootstrapServers(bootstrapServer)

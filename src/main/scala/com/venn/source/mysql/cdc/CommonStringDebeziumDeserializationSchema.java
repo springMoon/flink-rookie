@@ -26,7 +26,17 @@ public class CommonStringDebeziumDeserializationSchema implements DebeziumDeseri
     public void deserialize(SourceRecord record, Collector<String> out) {
         JsonObject jsonObject = new JsonObject();
 
+        String binlog = record.sourceOffset().get("file").toString();
+        String offset = record.sourceOffset().get("pos").toString();
+        String ts_sec = record.sourceOffset().get("ts_sec").toString();
+
+//        System.out.println("binlog : " + binlog + ", offset = " + offset);
+
         jsonObject.addProperty("host", host);
+        // add meta
+        jsonObject.addProperty("binlog", binlog);
+        jsonObject.addProperty("offset", offset);
+        jsonObject.addProperty("ts_sec", ts_sec);
         jsonObject.addProperty("port", port);
         jsonObject.addProperty("file", (String) record.sourceOffset().get("file"));
         jsonObject.addProperty("pos", (Long) record.sourceOffset().get("pos"));

@@ -174,6 +174,10 @@ object DayWindowFullData {
           out.collect(time + ",car," + car)
           out.collect(time + ",fav," + fav)
         }
+
+        override def clear(context: Context): Unit = {
+          // no action
+        }
       })
       .print()
 

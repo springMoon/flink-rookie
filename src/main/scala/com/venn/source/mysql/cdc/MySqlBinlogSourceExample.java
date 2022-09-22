@@ -19,6 +19,16 @@ public class MySqlBinlogSourceExample {
         String tableReg = "[deepexi|dolphinscheduler].*";
         String user = "root";
         String pass = "daas2020";
+
+        // caev
+        ip = "10.1.8.43";
+        dbReg = "order_pro";
+        tableReg = "order_opay_info";
+        pass = "enc(1C0F4C32D822B87CB4D8AC91246BFD64)";
+
+
+
+
         String bootstrapServer = "dcmp12:9092";
 
         if (args.length > 6) {
@@ -51,10 +61,11 @@ public class MySqlBinlogSourceExample {
         env
                 .fromSource(sourceFunction, WatermarkStrategy.noWatermarks(), "cdc")
                 .map(str -> str)
-//                .print()
+                .filter(str -> str.contains("DD012209160741922731"))
+                .print();
                 // 将数据发送到不同的 topic
-                .addSink(new CommonKafkaSink(bootstrapServer))
-                .setParallelism(1);
+//                .addSink(new CommonKafkaSink(bootstrapServer))
+//                .setParallelism(1);
 
         env.execute();
     }

@@ -2,12 +2,10 @@ package com.venn.stream.api.trigger
 
 import java.io.File
 import java.text.SimpleDateFormat
-
 import com.venn.common.Common
 import com.venn.util.CheckpointUtil
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.scala._
-import org.apache.flink.contrib.streaming.state.RocksDBStateBackend
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.scala.function.ProcessAllWindowFunction
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows
@@ -47,6 +45,7 @@ object ProcessWindowDemoForTrigger {
       .windowAll(TumblingProcessingTimeWindows.of(Time.seconds(60)))
       .trigger(CountAndTimeTrigger.of(10, Time.seconds(10)))
       .process(new ProcessAllWindowFunction[String, String, TimeWindow] {
+
         override def process(context: Context, elements: Iterable[String], out: Collector[String]): Unit = {
 
           var count = 0
@@ -56,6 +55,7 @@ object ProcessWindowDemoForTrigger {
           })
           logger.info("this trigger have : {} item", count)
         }
+
       })
 
     // execute job

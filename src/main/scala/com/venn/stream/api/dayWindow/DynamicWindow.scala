@@ -80,11 +80,9 @@ object DynamicWindow {
           countState = getRuntimeContext.getState(new ValueStateDescriptor[Long]("countState", classOf[Long]))
           elementState = getRuntimeContext.getListState(new ListStateDescriptor[UserLog]("elementState", classOf[UserLog]))
         }
-
         override def processElement(element: UserLog, ctx: KeyedProcessFunction[String, UserLog, String]#Context, out: Collector[String]): Unit = {
 
           //          println(DateTimeUtil.formatMillis(System.currentTimeMillis(), DateTimeUtil.YYYY_MM_DD_HH_MM_SS) + " - value : " + ctx.getCurrentKey + " - " + countState.value())
-
           // when first key element enter, init
           if (countState.value() == null) {
             val current = System.currentTimeMillis() + epochTime
@@ -95,8 +93,6 @@ object DynamicWindow {
           } else {
             countState.update(countState.value() + 1)
             elementState.add(element)
-
-
             // meet the quantity condition
             if (countState.value() >= epochCount) {
               // delete timer

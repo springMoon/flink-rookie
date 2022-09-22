@@ -81,6 +81,7 @@ object CurrentDayPvCountWaterMark {
           //            new EventResult(minId, maxId, minCreateTime, maxCreateTime, count)
           new Eventx(event1.id, event2.id, event1.amt + event2.amt)
         }
+
       })
     // format output even, connect min max id, add current timestamp
     //      .map(event => Event(event.id + "-" + event.createTime, sdf.format(System.currentTimeMillis()), event.count))
