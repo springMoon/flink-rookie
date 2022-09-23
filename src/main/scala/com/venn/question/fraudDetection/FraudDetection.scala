@@ -13,6 +13,9 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Random
 
+/**
+ * source from : flink official website : 基于 DataStream API 实现欺诈检测
+ */
 object FraudDetection {
 
   private val LOG = LoggerFactory.getLogger("FraudDetection")
@@ -49,10 +52,12 @@ class FuaudDetectionSource extends SourceFunction[(String, Double)] {
   override def run(sourceContext: SourceFunction.SourceContext[(String, Double)]): Unit = {
 
     while (isRunning) {
-      val accountId = "" + random.nextInt(10)
+      val accountId = "" + random.nextInt(1000)
       val amt = random.nextDouble() * 100;
 
       sourceContext.collect(accountId, amt)
+
+      Thread.sleep(1)
     }
     LOG.info("source finish")
   }
@@ -74,14 +79,21 @@ class FuaudDetectionProcessFunction extends KeyedProcessFunction[String, (String
 
   override def processElement(element: (String, Double), context: KeyedProcessFunction[String, (String, Double), String]#Context, collector: Collector[String]): Unit = {
 
-    if(smallFlag.value() != null && smallFlag.value() && element._2 > 90){
+    if(smallFlag.value() != null && smallFlag.value() && element._2 > 95){
       collector.collect(element._1)
     }
 
-    if(element._2 < 5){
+    if(element._2 < 2){
       smallFlag.update(true)
+      context.timerService().registerProcessingTimeTimer(System.currentTimeMillis() + 10 * 1000 )
     }
 
+  }
+
+
+  override def onTimer(timestamp: Long, ctx: KeyedProcessFunction[String, (String, Double), String]#OnTimerContext, out: Collector[String]): Unit = {
+    println("cliear key : " + ctx.getCurrentKey)
+    smallFlag.clear()
   }
 
   override def close(): Unit = {
