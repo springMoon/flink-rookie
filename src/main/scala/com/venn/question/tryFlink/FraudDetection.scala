@@ -1,4 +1,4 @@
-package com.venn.question.fraudDetection
+package com.venn.question.tryFlink
 
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.scala._

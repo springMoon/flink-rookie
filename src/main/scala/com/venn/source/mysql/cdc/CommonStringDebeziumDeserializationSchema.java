@@ -31,6 +31,7 @@ public class CommonStringDebeziumDeserializationSchema implements DebeziumDeseri
         String ts_sec = record.sourceOffset().get("ts_sec").toString();
 
 //        System.out.println("binlog : " + binlog + ", offset = " + offset);
+        // todo get schame change
 
         jsonObject.addProperty("host", host);
         // add meta
