@@ -1,14 +1,17 @@
 package com.venn.question.cdcStarrocks;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * cdcRecord save
+ */
 public class CdcRecord {
 
     private String db;
     private String table;
     private String op;
-    private Map<String, String> data = new HashMap<>();
+    private Map<String, String> data = new LinkedHashMap<>();
 
     public CdcRecord(String db, String table, String op) {
         this.db = db;

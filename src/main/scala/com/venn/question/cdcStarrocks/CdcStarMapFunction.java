@@ -32,7 +32,7 @@ public class CdcStarMapFunction extends RichMapFunction<String, CdcRecord> {
         // insert/update
         String dataLocation = "after";
         if("d".equals(op)){
-            // parse before
+            // if op is delete, get before
             dataLocation = "before";
         }
 

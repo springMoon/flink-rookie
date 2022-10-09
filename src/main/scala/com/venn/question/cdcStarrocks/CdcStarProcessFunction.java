@@ -20,8 +20,11 @@ public class CdcStarProcessFunction extends KeyedProcessFunction<String, CdcReco
     private final static Logger LOG = LoggerFactory.getLogger(CdcStarProcessFunction.class);
     private int batchSize;
     private long batchInterval;
+    // next timer time
     private ValueState<Long> cacheTimer;
+    // current cache size
     private ValueState<Integer> cacheSize;
+    // cache data
     private ListState<CdcRecord> cache;
 
     public CdcStarProcessFunction(int batchSize, long batchInterval) {

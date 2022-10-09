@@ -151,14 +151,14 @@ public class StarRocksSink extends RichSinkFunction<List<CdcRecord>> {
             Map<String, String> data = element.getData();
 
             for (String column : columnList) {
-
                 if (data.containsKey(column)) {
                     builder.append(data.get(column)).append(COL_SEP);
                 } else {
+                    // if target column not exists in source data, set as null
                     builder.append(NULL_COL).append(COL_SEP);
                 }
             }
-            // add _op
+            // add __op
             if ("d".equals(element.getOp())) {
                 // delete
                 builder.append("1");
@@ -166,6 +166,7 @@ public class StarRocksSink extends RichSinkFunction<List<CdcRecord>> {
                 // upsert
                 builder.append("0");
             }
+            // add row separator
             builder.append(ROW_SEP);
         }
         // remove last row sep
@@ -187,7 +188,6 @@ public class StarRocksSink extends RichSinkFunction<List<CdcRecord>> {
             PreparedStatement insertPS = connection.prepareStatement("desc " + db + "." + table);
             ResultSet result = insertPS.executeQuery();
             while (result.next()) {
-
                 String column = result.getString(1);
                 builer.append(column).append(",");
                 columnList.add(column);
@@ -217,10 +217,12 @@ public class StarRocksSink extends RichSinkFunction<List<CdcRecord>> {
 
     @Override
     public void finish() throws Exception {
+        LOG.info("finish");
     }
 
     @Override
     public void close() throws Exception {
+        LOG.info("close...");
         connection.close();
     }
 
