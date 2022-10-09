@@ -6,14 +6,11 @@ import com.google.gson.JsonParser;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.configuration.Configuration;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class CdcStarMapFunction extends RichMapFunction<String, CdcRecord> {
 
     private JsonParser parser;
-    private HashMap<String, List<String>> columnMap = new HashMap<>();
 
     @Override
     public void open(Configuration parameters) throws Exception {
