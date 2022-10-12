@@ -49,21 +49,24 @@ public class CdcStarProcessFunction extends KeyedProcessFunction<String, CdcReco
     public void processElement(CdcRecord element, KeyedProcessFunction<String, CdcRecord, List<CdcRecord>>.Context ctx, Collector<List<CdcRecord>> out) throws Exception {
 
         // cache size + 1
-        if(cacheSize.value() != null){
+        if (cacheSize.value() != null) {
             cacheSize.update(cacheSize.value() + 1);
-        }else{
+        } else {
             cacheSize.update(1);
             // add timer for interval flush
             long nextTimer = System.currentTimeMillis() + batchInterval;
+            LOG.debug("register timer : {} , key : {}", nextTimer, ctx.getCurrentKey());
             cacheTimer.update(nextTimer);
             ctx.timerService().registerProcessingTimeTimer(nextTimer);
         }
         // add data to cache state
         cache.add(element);
         // cache size max than batch Size
-        if(cacheSize.value() > batchSize){
+        if (cacheSize.value() >= batchSize) {
             // remove next timer
-            ctx.timerService().deleteEventTimeTimer(cacheTimer.value());
+            long nextTimer = cacheTimer.value();
+            LOG.debug("{} remove timer, key : {}", nextTimer, ctx.getCurrentKey());
+            ctx.timerService().deleteProcessingTimeTimer(nextTimer);
             // flush data to down stream
             flushData(out);
         }
@@ -71,26 +74,26 @@ public class CdcStarProcessFunction extends KeyedProcessFunction<String, CdcReco
 
     /**
      * flush data to down stream
-     * @param out
      */
     private void flushData(Collector<List<CdcRecord>> out) throws Exception {
-
         List<CdcRecord> tmpCache = new ArrayList<>();
         Iterator<CdcRecord> it = cache.get().iterator();
-        while (it.hasNext()){
+        while (it.hasNext()) {
             tmpCache.add(it.next());
         }
-        out.collect(tmpCache);
+        if (tmpCache.size() > 0) {
+            out.collect(tmpCache);
 
-        // finish flush all cache data, clear state
-        cache.clear();
-        cacheSize.clear();
-        cacheTimer.clear();
+            // finish flush all cache data, clear state
+            cache.clear();
+            cacheSize.clear();
+            cacheTimer.clear();
+        }
     }
 
     @Override
     public void onTimer(long timestamp, KeyedProcessFunction<String, CdcRecord, List<CdcRecord>>.OnTimerContext ctx, Collector<List<CdcRecord>> out) throws Exception {
-        LOG.info("{} trigger timer to flush data", ctx.getCurrentKey());
+        LOG.info("{} trigger timer to flush data", ctx.getCurrentKey(), timestamp);
         // batch interval trigger flush data
         flushData(out);
     }

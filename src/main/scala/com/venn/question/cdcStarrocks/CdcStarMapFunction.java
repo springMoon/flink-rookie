@@ -5,11 +5,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.configuration.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class CdcStarMapFunction extends RichMapFunction<String, CdcRecord> {
 
+    private final static Logger LOG = LoggerFactory.getLogger(CdcStarMapFunction.class);
     private JsonParser parser;
 
     @Override
@@ -19,6 +22,8 @@ public class CdcStarMapFunction extends RichMapFunction<String, CdcRecord> {
 
     @Override
     public CdcRecord map(String element) throws Exception {
+
+        LOG.debug("data : {}" , element );
         JsonObject object = parser.parse(element).getAsJsonObject();
         String db = object.get("db").getAsString();
         String table = object.get("table").getAsString();

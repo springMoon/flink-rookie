@@ -66,14 +66,18 @@ public class StarRocksSink extends RichSinkFunction<List<CdcRecord>> {
     public void invoke(List<CdcRecord> element, Context context) throws Exception {
 
         LOG.info("write batch size: " + element.size());
+        if(element == null || element.size() ==0){
+            LOG.info("ignore empty element");
+            return;
+        }
 
         // use StarRocks db name
 //        String db = cache.get(0).getDb();
         String table = element.get(0).getTable();
         String key = db + "_" + table;
 
-        // get table column
-        List<String> columnList = null;
+        // get table schema
+        List<String> columnList;
         if (!columnMap.containsKey(key)) {
             // db.table is first coming, load column, put to spliceColumnMap & columnMap
             loadTargetTableSchema(key, db, table);
@@ -83,11 +87,13 @@ public class StarRocksSink extends RichSinkFunction<List<CdcRecord>> {
         if (columnList.size() == 0) {
             LOG.info("{}.{} not exists in target starrocks, ingore data change", db, table);
         }
+        // make up data
         String data = parseUploadData(element, columnList);
 
         final String loadUrl = String.format("http://%s:%s/api/%s/%s/_stream_load", ip, loadPort, db, table);
         String label = db + "_" + table + "_" + System.currentTimeMillis();
 
+        // send data to starrocks
         doHttp(loadUrl, data, label, columns);
 
     }
