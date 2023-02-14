@@ -29,7 +29,7 @@ public class CdcToStarRocks {
         String ip = "localhost";
         int port = 3306;
         String db = "venn";
-//        String table = "venn.user_log";
+//        String table = "venn.user_log,venn.user_log_1";
         String table = "venn.*";
         String user = "root";
         String pass = "123456";
@@ -53,9 +53,9 @@ public class CdcToStarRocks {
                 .username(user)
                 .password(pass)
                 .startupOptions(StartupOptions.latest())
-                // do not cache schema change
-//                .includeSchemaChanges(false)
 //                .startupOptions(StartupOptions.initial())
+                // do not cache schema change
+//                .includeSchemaChanges(true)
                 // 自定义 解析器，讲数据解析成 json
                 .deserializer(new CommonStringDebeziumDeserializationSchema(ip, port))
                 .build();

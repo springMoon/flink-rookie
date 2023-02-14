@@ -29,10 +29,6 @@ public class CommonStringDebeziumDeserializationSchema implements DebeziumDeseri
         String binlog = record.sourceOffset().get("file").toString();
         String offset = record.sourceOffset().get("pos").toString();
         String ts_sec = record.sourceOffset().get("ts_sec").toString();
-
-//        System.out.println("binlog : " + binlog + ", offset = " + offset);
-        // todo get schame change
-
         jsonObject.addProperty("host", host);
         // add meta
         jsonObject.addProperty("binlog", binlog);
@@ -42,28 +38,35 @@ public class CommonStringDebeziumDeserializationSchema implements DebeziumDeseri
         jsonObject.addProperty("file", (String) record.sourceOffset().get("file"));
         jsonObject.addProperty("pos", (Long) record.sourceOffset().get("pos"));
         jsonObject.addProperty("ts_sec", (Long) record.sourceOffset().get("ts_sec"));
-        String[] name = record.valueSchema().name().split("\\.");
-        jsonObject.addProperty("db", name[1]);
-        jsonObject.addProperty("table", name[2]);
-        Struct value = ((Struct) record.value());
-        String operatorType = value.getString("op");
-        jsonObject.addProperty("operator_type", operatorType);
-        // c : create, u: update, d: delete, r: read
-        // insert update
-        if (!"d".equals(operatorType)) {
-            Struct after = value.getStruct("after");
-            JsonObject afterJsonObject = parseRecord(after);
-            jsonObject.add("after", afterJsonObject);
-        }
-        // update & delete
-        if ("u".equals(operatorType) || "d".equals(operatorType)) {
-            Struct source = value.getStruct("before");
-            JsonObject beforeJsonObject = parseRecord(source);
-            jsonObject.add("before", beforeJsonObject);
-        }
-        jsonObject.addProperty("parse_time", System.currentTimeMillis() / 1000);
 
-        out.collect(jsonObject.toString());
+        if ("mysql_binlog_source".equals(record.topic())) {
+            // ddl
+            // todo get schame change
+        } else {
+            // dml
+            String[] name = record.valueSchema().name().split("\\.");
+            jsonObject.addProperty("db", name[1]);
+            jsonObject.addProperty("table", name[2]);
+            Struct value = ((Struct) record.value());
+            String operatorType = value.getString("op");
+            jsonObject.addProperty("operator_type", operatorType);
+            // c : create, u: update, d: delete, r: read
+            // insert update
+            if (!"d".equals(operatorType)) {
+                Struct after = value.getStruct("after");
+                JsonObject afterJsonObject = parseRecord(after);
+                jsonObject.add("after", afterJsonObject);
+            }
+            // update & delete
+            if ("u".equals(operatorType) || "d".equals(operatorType)) {
+                Struct source = value.getStruct("before");
+                JsonObject beforeJsonObject = parseRecord(source);
+                jsonObject.add("before", beforeJsonObject);
+            }
+            jsonObject.addProperty("parse_time", System.currentTimeMillis() / 1000);
+
+            out.collect(jsonObject.toString());
+        }
     }
 
     private JsonObject parseRecord(Struct after) {
