@@ -4,19 +4,18 @@ import com.google.gson.JsonParser
 import com.venn.entity.KafkaSimpleStringRecord
 import com.venn.source.TumblingEventTimeWindows
 import com.venn.util.{DateTimeUtil, SimpleKafkaRecordDeserializationSchema}
-import org.apache.flink.api.common.eventtime.{TimestampAssignerSupplier, WatermarkGeneratorSupplier, WatermarkStrategy}
+import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.api.common.functions.RichMapFunction
-import org.apache.flink.connector.kafka.source.KafkaSource
-import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, KafkaSink}
+import org.apache.flink.connector.kafka.source.KafkaSource
+import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
+import org.apache.flink.streaming.api.scala.{OutputTag, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow
-import org.apache.flink.table.planner.plan.abilities.source.WatermarkPushDownSpec.DefaultWatermarkGeneratorSupplier.DefaultWatermarkGenerator
 
 import java.time.Duration
-import java.util.Date
 
 object LateTps {
 
@@ -27,8 +26,11 @@ object LateTps {
 
     val topic = "user_log"
     val bootstrapServer = "localhost:9092"
+    // second
+    val windowSize: Int = 10 * 60
+    val intervalSize: Int = 10
 
-    val source = KafkaSource
+    val kafkaSource = KafkaSource
       .builder[KafkaSimpleStringRecord]()
       .setTopics(topic)
       .setBootstrapServers(bootstrapServer)
@@ -37,14 +39,16 @@ object LateTps {
       .setDeserializer(new SimpleKafkaRecordDeserializationSchema())
       .build()
 
-    env
-      .fromSource(source, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(5)), "kafkaSource")
-      .map(new RichMapFunction[KafkaSimpleStringRecord, String] {
+    val source = env
+      .fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(5)), "kafkaSource")
 
-        var jsonParse:JsonParser = _
+    val stream = source
+      .map(new RichMapFunction[KafkaSimpleStringRecord, (String, Long)] {
+
+        var jsonParse: JsonParser = _
 
         override def open(parameters: Configuration): Unit = {
-          jsonParse = new JsonParser;
+          jsonParse = new JsonParser
 
         }
 
@@ -65,14 +69,50 @@ object LateTps {
 
         }
       })
+      //      todo timestamp and watermark
       .assignTimestampsAndWatermarks(WatermarkStrategy
-        .forBoundedOutOfOrderness(Duration.ofSeconds(5))
-        .withTimestampAssigner((String, Long) -> _.2)
+        .forBoundedOutOfOrderness[(String, Long)](Duration.ofSeconds(5))
+        .withTimestampAssigner(new SerializableTimestampAssigner[(String, Long)] {
+          override def extractTimestamp(t: (String, Long), l: Long): Long = {
+            t._2
+          }
+        })
+        .withIdleness(Duration.ofMinutes(1))
       )
-      .windowAll(TumblingEventTimeWindows.of(Time.minutes(10)))
-      .process(new LateTpsProcessAllWindowFunction[KafkaSimpleStringRecord, String, TimeWindow](9))
 
 
+    // windowSize minute, export every 1 minute tps
+//    val process10m = stream
+//      .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
+//      .process(new LateTpsProcessAllWindowFunction(windowSize, 60))
+//      .print("10m")
+
+//    // windowSize minute, export every 1 minute tps
+    val process10s = stream
+      .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
+      .process(new LateTpsSecondProcessAllWindowFunction(windowSize , intervalSize))
+
+    process10s.print("10s")
+
+    val tag = new OutputTag[String]("size")
+    val side = process10s.getSideOutput(tag)
+
+    val kafkaSink = KafkaSink.builder[String]()
+      .setBootstrapServers(bootstrapServer)
+      .setRecordSerializer(KafkaRecordSerializationSchema.builder[String]()
+        .setTopic(topic +"_side_sink")
+        .setValueSerializationSchema(new SimpleStringSchema())
+        .build()
+      )
+      .build()
+//      .setTopic(topic + "_side_sink")
+//      .setValueSerializationSchema(new SimpleStringSchema())
+//      .build())
+
+    side.sinkTo(kafkaSink)
+
+
+    env.execute("LateTps")
   }
 
 }
