@@ -12,7 +12,12 @@ import org.apache.flink.api.scala._
 
 import java.util
 
-class LateTpsSecondProcessAllWindowFunction(windowSize: Int, intervalSize: Int) extends ProcessAllWindowFunction[(String, Long), (String, String, Int, String, Double), TimeWindow] {
+/**
+ * 不固定长度的输出间隔
+ * @param windowSize
+ * @param intervalSize
+ */
+class AdjustLateTpsProcessAllWindowFunction(windowSize: Int, intervalSize: Int) extends ProcessAllWindowFunction[(String, Long), (String, String, Int, String, Double), TimeWindow] {
 
   val LOG = LoggerFactory.getLogger("LateTpsSecondProcessAllWindowFunction")
   // for current window
@@ -59,26 +64,12 @@ class LateTpsSecondProcessAllWindowFunction(windowSize: Int, intervalSize: Int) 
     elements.foreach((e: (String, Long)) => {
       // 获取每天数据在1小时内的秒数
       val current: Int = (e._2 / 1000 % interval).toInt
-      // 计算 每秒属于的窗口
-      //      val arr = calWindowFromSecond(current)
-      //      LOG.info("second : {}, belong window : {}", e._2, arr.toString)
-
-      if (current >= interval - 60) {
-        nextWindowMap.put(current, nextWindowMap.get(current) + 1)
-      }
       currentWindowMap.put(current, currentWindowMap.get(current) + 1)
-
-
-      //      arr.foreach((e: Int) => {
-      //        if (e >= interval) {
-      //          // second is over size, add to next next window map
-      //          val correctSecond = e % interval
-      //          nextWindowMap.put(correctSecond, nextWindowMap.get(correctSecond) + 1)
-      //        } else {
-      //          currentWindowMap.put(e, currentWindowMap.get(e) + 1)
-      //        }
-      //      })
     })
+    // load next window data
+    for(i <- interval - 60 until interval){
+      nextWindowMap.put(i, currentWindowMap.get(i))
+    }
 
     // todo tmp to side
     currentWindowMap.forEach((a: Int, b: Long) => {
@@ -89,13 +80,14 @@ class LateTpsSecondProcessAllWindowFunction(windowSize: Int, intervalSize: Int) 
       context.output(tag, windowStart + ", 2," + a + "," + b)
     })
 
+    // calculate every window size
     for (window <- 0 until interval / intervalSize) {
       // load current interval tps
       // 计算 每个窗口的时间范围
       val (start, end) = calWindowStartEnd(window)
       var size = 0l
       for (j <- start until end) {
-        // if window second include 0 to 60, add last window state
+        // if window second include -60 to 0, add last window state
         if (j <= 0) {
           size += lastWindowStateMap.get(interval + j)
         }
@@ -121,32 +113,15 @@ class LateTpsSecondProcessAllWindowFunction(windowSize: Int, intervalSize: Int) 
     map
   }
 
+  // calculate window start and end
   def calWindowStartEnd(i: Int): (Int, Int) = {
-
     val end = i * intervalSize
     val start = end - 60
     (start, end)
   }
 
-  /**
-   * 每秒的数据属于： 当前秒+1 到 当前秒 + 60
-   * 比如： 0 s 数据，属于 1-60 秒（不包括）
-   *
-   * @param current
-   * @return
-   */
-  def calWindowFromSecond(current: Int): Array[Int] = {
-
-    val arr = new Array[Int](6)
-    for (i <- 0 until 60) {
-      arr(i) = current + i + 1
-    }
-    arr
-  }
-
   override def close(): Unit = {
     lastWindow.clear()
-
   }
 
 }

@@ -9,14 +9,16 @@ import org.apache.flink.util.Collector
 
 import java.util
 
-class LateTpsProcessAllWindowFunction(windowSize: Int, intervalSize: Int) extends ProcessAllWindowFunction[(String, Long), (String, String, Int, Double), TimeWindow] {
+/**
+ * 固定输出间隔的窗口
+ * @param windowSize
+ * @param intervalSize
+ */
+class FixedLateTpsProcessAllWindowFunction(windowSize: Int, intervalSize: Int) extends ProcessAllWindowFunction[(String, Long), (String, String, Int, Double), TimeWindow] {
 
-  // for current window
-  //  var windowState: MapState[Int, Long] = _
   // for last window, last senond
   var lastWindow: ValueState[Double] = _
   var interval: Int = _
-
 
   override def open(parameters: Configuration): Unit = {
 
@@ -25,7 +27,6 @@ class LateTpsProcessAllWindowFunction(windowSize: Int, intervalSize: Int) extend
 
     interval = windowSize / intervalSize
   }
-
 
   override def process(context: Context, elements: Iterable[(String, Long)], out: Collector[(String, String, Int, Double)]): Unit = {
 
@@ -42,26 +43,26 @@ class LateTpsProcessAllWindowFunction(windowSize: Int, intervalSize: Int) extend
     for (_ <- 0 to windowSize - 1) {
       map.put(0, 0)
     }
-    elements.foreach((e: (String, Long)) => {
 
+    // for each element, get every window size
+    elements.foreach((e: (String, Long)) => {
       val current: Int = (e._2 / 1000 % interval).toInt
       map.put(current, map.get(current) + 1)
     })
 
-    // out 0
+    // for every zero window, out last window count
     out.collect(windowStart, windowEnd, 0, lastWindowCount)
     for (i <- 0 until interval - 1) {
       out.collect(windowStart, windowEnd, i + 1, map.get(i + 1) / 60.0)
     }
 
-    // keep last
-    lastWindow.update(map.get(0)/ 60.0)
+    // keep window last minute count as next window zero window count
+    lastWindow.update(map.get(interval - 1) / 60.0)
 
   }
 
   override def close(): Unit = {
     lastWindow.clear()
-
   }
 
 }

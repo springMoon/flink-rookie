@@ -26,10 +26,12 @@ object LateTps {
 
     val topic = "user_log"
     val bootstrapServer = "localhost:9092"
-    // second
+    // window size second
     val windowSize: Int = 10 * 60
-    val intervalSize: Int = 10
+    // calculate tps interval
+    val intervalSize: Int = 5
 
+    // kafka source for read data
     val kafkaSource = KafkaSource
       .builder[KafkaSimpleStringRecord]()
       .setTopics(topic)
@@ -39,37 +41,32 @@ object LateTps {
       .setDeserializer(new SimpleKafkaRecordDeserializationSchema())
       .build()
 
+    // add source
     val source = env
       .fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(5)), "kafkaSource")
 
+    // parse data, only get (user_id, ts)
     val stream = source
       .map(new RichMapFunction[KafkaSimpleStringRecord, (String, Long)] {
-
         var jsonParse: JsonParser = _
-
         override def open(parameters: Configuration): Unit = {
           jsonParse = new JsonParser
-
         }
-
         override def map(element: KafkaSimpleStringRecord): (String, Long) = {
 
           val json = jsonParse.parse(element.getValue).getAsJsonObject
-
           val tsStr = json.get("ts").getAsString
           val ts = DateTimeUtil.parse(tsStr).getTime
           val userId = json.get("user_id").getAsString
 
           (userId, ts)
-
         }
-
         override def close(): Unit = {
           jsonParse = null
 
         }
       })
-      //      todo timestamp and watermark
+      // set timestamp and watermark
       .assignTimestampsAndWatermarks(WatermarkStrategy
         .forBoundedOutOfOrderness[(String, Long)](Duration.ofSeconds(5))
         .withTimestampAssigner(new SerializableTimestampAssigner[(String, Long)] {
@@ -77,26 +74,28 @@ object LateTps {
             t._2
           }
         })
+        // idle 1 minute
         .withIdleness(Duration.ofMinutes(1))
       )
 
 
-    // windowSize minute, export every 1 minute tps
-//    val process10m = stream
-//      .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-//      .process(new LateTpsProcessAllWindowFunction(windowSize, 60))
-//      .print("10m")
+    // windowSize 10 minute, export every 1 minute tps
+    val process10m = stream
+      .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
+      .process(new FixedLateTpsProcessAllWindowFunction(windowSize, 60))
+      .print("10m")
 
 //    // windowSize minute, export every 1 minute tps
     val process10s = stream
       .windowAll(TumblingEventTimeWindows.of(Time.seconds(windowSize)))
-      .process(new LateTpsSecondProcessAllWindowFunction(windowSize , intervalSize))
+      .process(new AdjustLateTpsProcessAllWindowFunction(windowSize , intervalSize))
 
     process10s.print("10s")
 
     val tag = new OutputTag[String]("size")
     val side = process10s.getSideOutput(tag)
 
+    // side tmp result to kafka
     val kafkaSink = KafkaSink.builder[String]()
       .setBootstrapServers(bootstrapServer)
       .setRecordSerializer(KafkaRecordSerializationSchema.builder[String]()
@@ -105,13 +104,11 @@ object LateTps {
         .build()
       )
       .build()
-//      .setTopic(topic + "_side_sink")
-//      .setValueSerializationSchema(new SimpleStringSchema())
-//      .build())
 
+    // add sink
     side.sinkTo(kafkaSink)
 
-
+    // execute task
     env.execute("LateTps")
   }
 
