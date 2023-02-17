@@ -29,7 +29,7 @@ object LateTps {
     // window size second
     val windowSize: Int = 10 * 60
     // calculate tps interval
-    val intervalSize: Int = 5
+    val intervalSize: Int = 10
 
     // kafka source for read data
     val kafkaSource = KafkaSource

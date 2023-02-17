@@ -10,7 +10,7 @@ import org.apache.flink.util.Collector
 import java.util
 
 /**
- * 固定输出间隔的窗口
+ * 整分钟输出间隔的窗口
  * @param windowSize
  * @param intervalSize
  */
