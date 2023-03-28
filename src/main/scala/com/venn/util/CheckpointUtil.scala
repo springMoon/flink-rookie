@@ -1,10 +1,10 @@
 package com.venn.util
 
-import org.apache.flink.contrib.streaming.state.EmbeddedRocksDBStateBackend
 import org.apache.flink.runtime.state.StateBackend
 import org.apache.flink.runtime.state.hashmap.HashMapStateBackend
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.contrib.streaming.state.EmbeddedRocksDBStateBackend
 
 object CheckpointUtil {
 

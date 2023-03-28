@@ -9,7 +9,7 @@
     <version>1.0</version>
 
     <properties>
-        <flink.version>1.14.4</flink.version>
+        <flink.version>1.16.1</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
         <hadoop.version>3.1.1</hadoop.version>
         <elasticsearch.version>7.2.0</elasticsearch.version>
@@ -18,7 +18,7 @@
         <mysql-connector.version>8.0.21</mysql-connector.version>
         <hive.version>3.1.0</hive.version>
         <gson.version>2.2.4</gson.version>
-        <flink.cdc.version>2.2.0</flink.cdc.version>
+        <flink.cdc.version>2.3.0</flink.cdc.version>
         <lettuce.version>5.0.5.RELEASE</lettuce.version>
         <target.java.version>1.8</target.java.version>
         <target.java.version>1.8</target.java.version>
@@ -27,7 +27,7 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+            <artifactId>flink-streaming-java</artifactId>
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -45,7 +45,7 @@
         <!--table-->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-runtime_${scala.binary.version}</artifactId>
+            <artifactId>flink-table-runtime</artifactId>
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -57,7 +57,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-api-java-bridge_${scala.binary.version}</artifactId>
+            <artifactId>flink-table-api-java-bridge</artifactId>
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -82,7 +82,7 @@
         <!--kafka-->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-kafka_${scala.binary.version}</artifactId>
+            <artifactId>flink-connector-kafka</artifactId>
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -153,7 +153,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-statebackend-rocksdb_${scala.binary.version}</artifactId>
+            <artifactId>flink-statebackend-rocksdb</artifactId>
             <version>${flink.version}</version>
         </dependency>
         <!--<dependency>
@@ -170,7 +170,7 @@
         <!-- flink runtime web ui-->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-runtime-web_${scala.binary.version}</artifactId>
+            <artifactId>flink-runtime-web</artifactId>
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -198,7 +198,7 @@
         </dependency>-->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-jdbc_${scala.binary.version}</artifactId>
+            <artifactId>flink-connector-jdbc</artifactId>
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
