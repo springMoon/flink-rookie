@@ -9,6 +9,7 @@ import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.connector.base.DeliveryGuarantee
 import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, KafkaSink}
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
@@ -103,6 +104,7 @@ object LateTps {
         .setValueSerializationSchema(new SimpleStringSchema())
         .build()
       )
+      .setDeliverGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
       .build()
 
     // add sink
