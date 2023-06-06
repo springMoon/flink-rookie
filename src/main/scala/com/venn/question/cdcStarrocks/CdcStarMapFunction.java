@@ -23,7 +23,7 @@ public class CdcStarMapFunction extends RichMapFunction<String, CdcRecord> {
     @Override
     public CdcRecord map(String element) throws Exception {
 
-        LOG.debug("data : {}" , element );
+        LOG.info("data : {}", element);
         JsonObject object = parser.parse(element).getAsJsonObject();
         String db = object.get("db").getAsString();
         String table = object.get("table").getAsString();
@@ -33,19 +33,19 @@ public class CdcStarMapFunction extends RichMapFunction<String, CdcRecord> {
 
         // insert/update
         String dataLocation = "after";
-        if("d".equals(op)){
+        if ("d".equals(op)) {
             // if op is delete, get before
             dataLocation = "before";
         }
 
         JsonObject data = object.get(dataLocation).getAsJsonObject();
 
-        for(Map.Entry<String, JsonElement> entry: data.entrySet()){
+        for (Map.Entry<String, JsonElement> entry : data.entrySet()) {
 
             String columnName = entry.getKey();
             String columnValue;
             JsonElement value = entry.getValue();
-            if(!value.isJsonNull()){
+            if (!value.isJsonNull()) {
                 // if column value is not null, get as string
                 columnValue = value.getAsString();
                 // put column name/value to record.data

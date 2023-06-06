@@ -50,4 +50,14 @@ public class CdcRecord {
     public void setData(Map<String, String> data) {
         this.data = data;
     }
+
+    @Override
+    public String toString() {
+        return "CdcRecord{" +
+                "db='" + db + '\'' +
+                ", table='" + table + '\'' +
+                ", op='" + op + '\'' +
+                ", data=" + data +
+                '}';
+    }
 }

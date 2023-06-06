@@ -16,21 +16,21 @@ import java.util.Properties;
  * 局限：
  * 1. 还未实现 starrocks 端表结构跟随 源端表结构同步变更
  * 2. 为了保证效率，仅会在每一个表第一次来的时候判断目标段是否存在该表，如果已经判定该表不存在，后续直接忽略该表的数据变更
- * 3. 部分不导入的表，只在sink 的时候做了过滤，前面的操作还是要继续，可以考虑在 反序列化活map中过滤掉目标库中不存在的表数据
+ * 3. 部分不导入的表，只在sink 的时候做了过滤，前面的操作还是要继续，可以考虑在 反序列化和map中过滤掉目标库中不存在的表数据
  */
 public class CdcToStarRocks {
 
     // 每个批次最大条数和等待时间
     private static int batchSize = 10000;
-    private static long batchInterval = 10 *1000;
+    private static long batchInterval = 10 * 1000;
 
     public static void main(String[] args) throws Exception {
 
         String ip = "localhost";
         int port = 3306;
-        String db = "venn";
+        String db = "hive_3";
 //        String table = "venn.user_log,venn.user_log_1";
-        String table = "venn.*";
+        String table = "hive_3.*";
         String user = "root";
         String pass = "123456";
 
@@ -67,12 +67,13 @@ public class CdcToStarRocks {
 //                 json 字符串转 CdcRecord
                 .map(new CdcStarMapFunction())
                 .name("map")
-                .keyBy(  record -> record.getDb() + "_" + record.getTable())
+                .keyBy(record -> record.getDb() + "_" + record.getTable())
                 .process(new CdcStarProcessFunction(batchSize, batchInterval))
                 .name("process")
                 .uid("process")
-                .addSink(new StarRocksSink(starrocksIp, starrocksPort, starrocksLoadPort, starrocksUser, starrocksPass, starrocksDb))
-                .name("sink");
+                .print();
+//                .addSink(new StarRocksSink(starrocksIp, starrocksPort, starrocksLoadPort, starrocksUser, starrocksPass, starrocksDb))
+//                .name("sink");
 
         env.execute("cdcToStarRocks");
     }

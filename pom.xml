@@ -20,6 +20,7 @@
         <gson.version>2.2.4</gson.version>
         <flink.cdc.version>2.3.0</flink.cdc.version>
         <lettuce.version>5.0.5.RELEASE</lettuce.version>
+        <starrocks.version>1.2.6_flink-1.14_2.12</starrocks.version>
         <target.java.version>1.8</target.java.version>
         <target.java.version>1.8</target.java.version>
     </properties>
@@ -253,6 +254,12 @@
             <artifactId>fastutil</artifactId>
             <version>8.3.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.starrocks</groupId>
+            <artifactId>flink-connector-starrocks</artifactId>
+            <version>${starrocks.version}</version>
+        </dependency>
+
 
     </dependencies>
 

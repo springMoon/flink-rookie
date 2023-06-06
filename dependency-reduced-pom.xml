@@ -701,6 +701,7 @@
     <flink-shaded-jackson.version>2.9.8-7.0</flink-shaded-jackson.version>
     <lettuce.version>5.0.5.RELEASE</lettuce.version>
     <gson.version>2.2.4</gson.version>
+    <starrocks.version>1.2.6_flink-1.14_2.12</starrocks.version>
     <scala.binary.version>2.12</scala.binary.version>
     <hbase.version>2.1.4</hbase.version>
     <elasticsearch.version>7.2.0</elasticsearch.version>

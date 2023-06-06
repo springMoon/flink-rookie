@@ -5,15 +5,17 @@ import com.venn.entity.KafkaSimpleStringRecord
 import com.venn.source.TumblingEventTimeWindows
 import com.venn.util.{DateTimeUtil, SimpleKafkaRecordDeserializationSchema}
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, Watermark, WatermarkGenerator, WatermarkGeneratorSupplier, WatermarkOutput, WatermarkStrategy}
-import org.apache.flink.api.common.functions.RichMapFunction
+import org.apache.flink.api.common.functions.{CoGroupFunction, RichMapFunction}
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, KafkaSink}
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
+import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.api.scala.{OutputTag, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.util.Collector
 
 import java.time.Duration
 
@@ -118,6 +120,7 @@ object LateTpsWatermark {
       .process(new AdjustLateTpsProcessAllWindowFunction(windowSize, intervalSize))
 
     process10s.print("10s")
+
 
     val tag = new OutputTag[String]("size")
     val side = process10s.getSideOutput(tag)
