@@ -2,7 +2,6 @@ package com.venn.stream.api.dayWindow
 
 import java.time.Duration
 import java.util
-
 import com.google.gson.Gson
 import com.venn.common.Common
 import com.venn.entity.{KafkaSimpleStringRecord, UserLog}
@@ -16,6 +15,8 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, KafkaSink}
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
+import org.apache.flink.contrib.streaming.state.{EmbeddedRocksDBStateBackend, RocksDBStateBackend}
+import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.util.Collector
@@ -38,6 +39,24 @@ object DynamicWindow {
     // env
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
+
+
+    env.enableCheckpointing(10 * 1000, CheckpointingMode.EXACTLY_ONCE)
+    env.getCheckpointConfig.setCheckpointTimeout(20 * 1000)
+    // Flink 1.11.0 new feature: Enables unaligned checkpoints
+    env.getCheckpointConfig.enableUnalignedCheckpoints()
+    env.getCheckpointConfig.setTolerableCheckpointFailureNumber(1000)
+
+    // checkpoint dir
+        val path = "file:///tmp/data/flink_checkpoint"
+//    val path = "hdfs:///tmp/data/flink_checkpoint"
+
+    //    val stateBackend = new EmbeddedRocksDBStateBackend(true)
+    //    env.setStateBackend(stateBackend)
+    //    env.getCheckpointConfig.setCheckpointStorage(path)
+
+
+    env.setStateBackend(new RocksDBStateBackend(path))
 
     val source = KafkaSource
       .builder[KafkaSimpleStringRecord]()
@@ -80,6 +99,7 @@ object DynamicWindow {
           countState = getRuntimeContext.getState(new ValueStateDescriptor[Long]("countState", classOf[Long]))
           elementState = getRuntimeContext.getListState(new ListStateDescriptor[UserLog]("elementState", classOf[UserLog]))
         }
+
         override def processElement(element: UserLog, ctx: KeyedProcessFunction[String, UserLog, String]#Context, out: Collector[String]): Unit = {
 
           //          println(DateTimeUtil.formatMillis(System.currentTimeMillis(), DateTimeUtil.YYYY_MM_DD_HH_MM_SS) + " - value : " + ctx.getCurrentKey + " - " + countState.value())

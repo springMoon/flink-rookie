@@ -24,6 +24,7 @@ object CheckpointUtil {
     // checkpoint dir
     env.getCheckpointConfig.setCheckpointStorage(checkpointPath)
 
+
   }
 
   /**
