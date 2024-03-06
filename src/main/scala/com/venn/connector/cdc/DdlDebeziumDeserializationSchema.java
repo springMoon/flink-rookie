@@ -1,11 +1,12 @@
-package com.venn.source.mysql.cdc;
+package com.venn.connector.cdc;
 
-import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
 import com.google.gson.JsonObject;
+import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.util.Collector;
 import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 
@@ -14,13 +15,13 @@ import java.math.BigDecimal;
 /**
  * deserialize debezium format binlog
  */
-public class CommonStringDebeziumDeserializationSchema implements DebeziumDeserializationSchema<String> {
+public class DdlDebeziumDeserializationSchema implements DebeziumDeserializationSchema<String> {
 
     private String host;
     private int port;
 
 
-    public CommonStringDebeziumDeserializationSchema(String host, int port) {
+    public DdlDebeziumDeserializationSchema(String host, int port) {
         this.host = host;
         this.port = port;
     }
@@ -44,6 +45,10 @@ public class CommonStringDebeziumDeserializationSchema implements DebeziumDeseri
         if ("mysql_binlog_source".equals(record.topic())) {
             // ddl
             // todo get schame change
+            Struct value = (Struct) record.value();
+            String historyRecord = value.getString("historyRecord");
+
+            out.collect(historyRecord);
         } else {
             // dml
             String[] name = record.valueSchema().name().split("\\.");
@@ -82,12 +87,20 @@ public class CommonStringDebeziumDeserializationSchema implements DebeziumDeseri
                     jo.addProperty(fieldName, resultInt8);
                     break;
                 case INT16:
-                    short resultInt16 = after.getInt16(fieldName);
-                    jo.addProperty(fieldName, resultInt16);
+                    try {
+                        short resultInt16 = after.getInt16(fieldName);
+                        jo.addProperty(fieldName, resultInt16);
+                    } catch (Exception e) {
+//                        e.printStackTrace();
+                    }
                     break;
                 case INT32:
-                    int resultInt32 = after.getInt16(fieldName);
-                    jo.addProperty(fieldName, resultInt32);
+                    try {
+                        int resultInt32 = after.getInt32(fieldName);
+                        jo.addProperty(fieldName, resultInt32);
+                    } catch (Exception e) {
+//                        e.printStackTrace();
+                    }
                     break;
                 case INT64:
                     Long resultInt = after.getInt64(fieldName);
@@ -110,7 +123,7 @@ public class CommonStringDebeziumDeserializationSchema implements DebeziumDeseri
                     jo.addProperty(fieldName, bool);
                 case BYTES:
                     String value = null;
-                    Object obj = after.get("frealqty");
+                    Object obj = after.get(fieldName);
                     // todo other Bytes
                     if (obj instanceof BigDecimal) {
                         jo.addProperty(fieldName, (BigDecimal) obj);

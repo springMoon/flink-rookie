@@ -1,13 +1,13 @@
 package com.venn.stream.api.dayWindow
 
+import com.google.gson.GsonBuilder
+
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
-
 import com.venn.common.Common
 import com.venn.util.MathUtil
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
-import scala.util.parsing.json.JSONObject
 
 /**
   * test data maker
@@ -40,10 +40,10 @@ object CurrentDayMaker {
 
 //      val map = Map("id"-> i, "createTime"-> sdf.format(System.currentTimeMillis()))
       val map = Map("id"-> i, "createTime"-> getCreateTime(), "amt"-> (MathUtil.random.nextInt(10) +"." + MathUtil.random.nextInt(10)))
-      val jsonObject: JSONObject = new JSONObject(map)
-      println(jsonObject.toString())
+      val gson = new GsonBuilder().create();
+      gson.toJson(map);
       // topic current_day
-      val msg = new ProducerRecord[String, String]("current_day", jsonObject.toString())
+      val msg = new ProducerRecord[String, String]("current_day", gson.toString())
       producer.send(msg)
       producer.flush()
       Thread.sleep(1000)

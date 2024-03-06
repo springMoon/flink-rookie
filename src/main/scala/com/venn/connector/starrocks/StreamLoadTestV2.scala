@@ -35,6 +35,8 @@ object StreamLoadTestV2 {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
 
+
+
     val source = env.addSource(new CustJdbcSource(ip, jdbcPort, user, pass, sql, COL_SEP, batch, interval))
 
     val stream = source.map(new RichMapFunction[String, String] {

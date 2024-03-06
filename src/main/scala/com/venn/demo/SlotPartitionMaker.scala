@@ -1,13 +1,13 @@
 package com.venn.demo
 
+import com.google.gson.GsonBuilder
+
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
-
 import com.venn.common.Common
 import com.venn.util.MathUtil
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
-import scala.util.parsing.json.JSONObject
 
 /**
   * test data maker
@@ -43,10 +43,11 @@ object SlotPartitionMaker {
     var i = 0;
     while (true) {
       val map = Map("id" -> i, "createTime" -> getCreateTime(), "amt" -> (MathUtil.random.nextInt(10) + "." + MathUtil.random.nextInt(10)))
-      val jsonObject: JSONObject = new JSONObject(map)
-      println(jsonObject.toString())
+      val gson = new GsonBuilder().create();
+      gson.toJson(map);
+      println(gson.toString())
       // topic current_day
-      val msg = new ProducerRecord[String, String]("slot_partition", jsonObject.toString())
+      val msg = new ProducerRecord[String, String]("slot_partition", gson.toString())
       producer.send(msg)
       producer.flush()
       if (MathUtil.random.nextBoolean()) {

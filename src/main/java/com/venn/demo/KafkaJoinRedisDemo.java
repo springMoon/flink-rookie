@@ -32,6 +32,7 @@ public class KafkaJoinRedisDemo {
                 .setTopics(topic)
                 .build();
 
+
         // get value
         SingleOutputStreamOperator<String> source = env
                 .fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "kafkaSource")

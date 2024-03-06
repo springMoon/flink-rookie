@@ -1,11 +1,11 @@
 package com.venn.stream.api.intervalJoin
 
-import java.text.SimpleDateFormat
+import com.google.gson.{Gson, GsonBuilder, JsonObject}
 
+import java.text.SimpleDateFormat
 import com.venn.common.Common
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
-import scala.util.parsing.json.JSONObject
 
 /**
   * test data maker
@@ -32,9 +32,11 @@ object IntervalJoinKafkaKeyMaker {
     val producer = new KafkaProducer[String, String](Common.getProp)
     idLeft = idLeft + 1
     val map = Map("id" -> idLeft, "name" -> ("venn" + System.currentTimeMillis()), "date" -> sdf.format(System.currentTimeMillis()))
-    val jsonObject: JSONObject = new JSONObject(map)
-    println("left : " + jsonObject.toString())
-    val msg = new ProducerRecord[String, String](topic, jsonObject.toString())
+    val gson = new GsonBuilder().create();
+    gson.toJson(map);
+
+    println("left : " + gson.toString())
+    val msg = new ProducerRecord[String, String](topic, gson.toString())
     producer.send(msg)
     producer.flush()
   }
@@ -45,9 +47,10 @@ object IntervalJoinKafkaKeyMaker {
     val producer = new KafkaProducer[String, String](Common.getProp)
     idRight = idRight + 1
     val map = Map("id" -> idRight,  "phone" -> ("17713333333" + idRight), "date" -> sdf.format(System.currentTimeMillis()))
-    val jsonObject: JSONObject = new JSONObject(map)
-    println("right : \t\t\t\t\t\t\t\t" + jsonObject.toString())
-    val msg = new ProducerRecord[String, String](topic, jsonObject.toString())
+    val gson = new GsonBuilder().create();
+    gson.toJson(map);
+    println("right : \t\t\t\t\t\t\t\t" + gson.toString())
+    val msg = new ProducerRecord[String, String](topic, gson.toString())
     producer.send(msg)
     producer.flush()
   }

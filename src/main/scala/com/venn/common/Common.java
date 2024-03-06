@@ -1,6 +1,5 @@
 package com.venn.common;
 
-import scala.Boolean;
 
 import java.util.Properties;
 
