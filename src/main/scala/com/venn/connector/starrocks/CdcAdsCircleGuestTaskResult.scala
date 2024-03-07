@@ -16,6 +16,7 @@ import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
 import org.slf4j.LoggerFactory
 
+import java.util.Properties
 import scala.sys.env
 
 /**
@@ -27,17 +28,17 @@ import scala.sys.env
 object CdcAdsCircleGuestTaskResult {
 
   val LOG = LoggerFactory.getLogger("CdcAdsCircleGuestTaskResult")
-//  val ip = "10.20.131.192"
-//  val jdbcPort = "9030"
-//  val httpPort = "18030"
-//  val user = "root"
-//  val pass = "showyu123"
-//  var batch = 64000
-//  var interval = 5
-//
-//  var sourceId = "rm-2ze82f881xft670dm.mysql.rds.aliyuncs.com"
-//  var sourceUser = "deepexi"
-//  var sourcePass = "mvqRxerKIgQadEO1M74"
+  //  val ip = "10.20.131.192"
+  //  val jdbcPort = "9030"
+  //  val httpPort = "18030"
+  //  val user = "root"
+  //  val pass = "showyu123"
+  //  var batch = 64000
+  //  var interval = 5
+  //
+  //  var sourceId = "rm-2ze82f881xft670dm.mysql.rds.aliyuncs.com"
+  //  var sourceUser = "deepexi"
+  //  var sourcePass = "mvqRxerKIgQadEO1M74"
 
 
   def main(args: Array[String]): Unit = {
@@ -67,6 +68,12 @@ object CdcAdsCircleGuestTaskResult {
       LOG.warn("source.startup_option default is latest")
     }
 
+
+    val prop = new Properties()
+    prop.put("converters", "dateConverters")
+    prop.put("dateConverters.type", "com.venn.common.MySqlDateTimeConverter")
+
+
     // cdc source
     val source = MySqlSource.builder[String]()
       .hostname(parameterTool.get("source.host"))
@@ -78,12 +85,13 @@ object CdcAdsCircleGuestTaskResult {
       .serverTimeZone(parameterTool.get("source.time_zone"))
       // 包含 schema change
       .includeSchemaChanges(false)
+      .debeziumProperties(prop)
       //      .startupOptions(StartupOptions.latest())
-      .startupOptions(StartupOptions.initial())
+      .startupOptions(startupOption)
       .deserializer(new DdlDebeziumDeserializationSchema(parameterTool.get("source.host"), parameterTool.get("source.port").toInt))
       .build()
 
-
+    // todo, set with start command is better
     env.setParallelism(1)
 
 
@@ -155,7 +163,7 @@ object CdcAdsCircleGuestTaskResult {
 
     map.addSink(sink).name("sink").uid("sink")
 
-    env.execute("CdcAdsCircleGuestTaskResult")
+    env.execute(parameterTool.get("job_name"))
   }
 
 }
