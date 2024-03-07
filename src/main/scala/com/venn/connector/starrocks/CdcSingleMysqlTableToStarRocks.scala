@@ -17,7 +17,6 @@ import org.apache.flink.configuration.Configuration
 import org.slf4j.LoggerFactory
 
 import java.util.Properties
-import scala.sys.env
 
 /**
  * @Classname CdcAdsCircleGuestTaskResult
@@ -25,7 +24,7 @@ import scala.sys.env
  * @Date 2024/3/6
  * @Created by venn
  */
-object CdcAdsCircleGuestTaskResult {
+object CdcSingleMysqlTableToStarRocks {
 
   val LOG = LoggerFactory.getLogger("CdcAdsCircleGuestTaskResult")
   //  val ip = "10.20.131.192"
