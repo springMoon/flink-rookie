@@ -27,18 +27,6 @@ import java.util.Properties
 object CdcSingleMysqlTableToStarRocks {
 
   val LOG = LoggerFactory.getLogger("CdcAdsCircleGuestTaskResult")
-  //  val ip = "10.20.131.192"
-  //  val jdbcPort = "9030"
-  //  val httpPort = "18030"
-  //  val user = "root"
-  //  val pass = "showyu123"
-  //  var batch = 64000
-  //  var interval = 5
-  //
-  //  var sourceId = "rm-2ze82f881xft670dm.mysql.rds.aliyuncs.com"
-  //  var sourceUser = "deepexi"
-  //  var sourcePass = "mvqRxerKIgQadEO1M74"
-
 
   def main(args: Array[String]): Unit = {
 
