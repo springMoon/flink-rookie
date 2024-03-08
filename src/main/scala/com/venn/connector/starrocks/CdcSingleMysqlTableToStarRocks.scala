@@ -36,6 +36,9 @@ object CdcSingleMysqlTableToStarRocks {
     val file = args(0)
     val parameterTool = ParameterTool.fromPropertiesFile(file)
 
+    // init table
+    DdlMysqlToStarRocks.initTable(parameterTool )
+
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     env.disableOperatorChaining()
 
