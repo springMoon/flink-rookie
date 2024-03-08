@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory
 import java.util.Properties
 
 /**
- * @Classname CdcAdsCircleGuestTaskResult
+ * @Classname CdcSingleMysqlTableToStarRocks
  * @Description TODO
  * @Date 2024/3/6
  * @Created by venn
