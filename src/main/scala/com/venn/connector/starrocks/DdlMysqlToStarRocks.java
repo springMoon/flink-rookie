@@ -1,5 +1,8 @@
 package com.venn.connector.starrocks;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * @Classname DdlMysqlToStarRocks
  * @Description 使用 mysql ddl 创建 StarRocks 表, 支持 mysql information 和 desc 读表结构
@@ -7,6 +10,8 @@ package com.venn.connector.starrocks;
  * @Created by venn
  */
 public class DdlMysqlToStarRocks {
+
+    Logger LOG = LoggerFactory.getLogger(DdlMysqlToStarRocks.class);
 
 
     public static void main(String[] args) {

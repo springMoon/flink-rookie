@@ -36,19 +36,23 @@ object CdcSingleMysqlTableToStarRocks {
     val file = args(0)
     val parameterTool = ParameterTool.fromPropertiesFile(file)
 
-
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     env.disableOperatorChaining()
 
     var startupOption = StartupOptions.latest()
-    if (StartupMode.INITIAL.equals(parameterTool.get("source.startup_option"))) {
+    if (StartupMode.INITIAL.equals(StartupMode.valueOf(parameterTool.get("source.startup_option")))) {
+      LOG.info("startup mode : Initial")
       startupOption = StartupOptions.initial()
-    } else if (StartupMode.EARLIEST_OFFSET.equals(parameterTool.get("source.startup_option"))) {
+      LOG.info("startup mode : EARLIEST_OFFSET")
+    } else if (StartupMode.EARLIEST_OFFSET.equals(StartupMode.valueOf(parameterTool.get("source.startup_option")))) {
+      LOG.info("startup mode : earliest")
       startupOption = StartupOptions.earliest()
-    } else if (StartupMode.TIMESTAMP.equals(parameterTool.get("source.startup_option"))) {
-      val startTime = DateTimeUtil.parse(parameterTool.get("source.startup_option_time"))
+    } else if (StartupMode.TIMESTAMP.equals(StartupMode.valueOf(parameterTool.get("source.startup_option")))) {
+      LOG.info("startup mode : TIMESTAMP")
+      val startTime = DateTimeUtil.parse(parameterTool.get("source.startup_option"))
       startupOption = StartupOptions.timestamp(startTime.getTime * 1000)
-    } else if (StartupMode.SPECIFIC_OFFSETS.equals(parameterTool.get("source.startup_option"))) {
+    } else if (StartupMode.SPECIFIC_OFFSETS.equals(StartupMode.valueOf(parameterTool.get("source.startup_option")))) {
+      LOG.info("startup mode : SPECIFIC_OFFSETS")
       val offset = BinlogOffset.ofBinlogFilePosition(parameterTool.get("source.startup_option.offset.file"), parameterTool.get("source.startup_option.offset.position").toLong)
       startupOption = StartupOptions.specificOffset(offset)
     } else {
@@ -105,7 +109,6 @@ object CdcSingleMysqlTableToStarRocks {
     val map = env.fromSource(source, WatermarkStrategy.noWatermarks[String](), "cdc")
       .map(new RichMapFunction[String, String] {
         var jsonParser: JsonParser = _
-
 
         override def open(parameters: Configuration): Unit = {
           jsonParser = new JsonParser()
