@@ -26,7 +26,7 @@ import java.util.Properties
  */
 object CdcSingleMysqlTableToStarRocks {
 
-  val LOG = LoggerFactory.getLogger("CdcAdsCircleGuestTaskResult")
+  val LOG = LoggerFactory.getLogger("CdcSingleMysqlTableToStarRocks")
 
   def main(args: Array[String]): Unit = {
 
@@ -55,11 +55,9 @@ object CdcSingleMysqlTableToStarRocks {
       LOG.warn("source.startup_option default is latest")
     }
 
-
     val prop = new Properties()
     prop.put("converters", "dateConverters")
     prop.put("dateConverters.type", "com.venn.common.MySqlDateTimeConverter")
-
 
     // cdc source
     val source = MySqlSource.builder[String]()
