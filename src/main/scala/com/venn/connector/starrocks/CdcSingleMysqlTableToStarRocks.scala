@@ -10,6 +10,8 @@ import com.ververica.cdc.connectors.mysql.source.offset.BinlogOffset
 import com.ververica.cdc.connectors.mysql.table.{StartupMode, StartupOptions}
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RichMapFunction
+import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.api.common.time.Time
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.api.scala._
@@ -17,6 +19,7 @@ import org.apache.flink.configuration.Configuration
 import org.slf4j.LoggerFactory
 
 import java.util.Properties
+import java.util.concurrent.TimeUnit
 
 /**
  * @Classname CdcSingleMysqlTableToStarRocks
@@ -37,10 +40,25 @@ object CdcSingleMysqlTableToStarRocks {
     val parameterTool = ParameterTool.fromPropertiesFile(file)
 
     // init table
-    DdlMysqlToStarRocks.initTable(parameterTool )
+    DdlMysqlToStarRocks.initTable(parameterTool)
 
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     env.disableOperatorChaining()
+
+    // Restart Strategies
+    env.getConfig.setRestartStrategy(RestartStrategies.exponentialDelayRestart(
+      Time.of(1, TimeUnit.SECONDS),
+      // initial delay between restarts
+      Time.of(600, TimeUnit.SECONDS),
+      // maximum delay between restarts
+      1.1,
+      // exponential multiplier
+      Time.of(2, TimeUnit.SECONDS),
+      // 重置延迟时间到初始值的阈值
+      1 // jitter
+
+    ))
+
 
     var startupOption = StartupOptions.latest()
     if (StartupMode.INITIAL.equals(StartupMode.valueOf(parameterTool.get("source.startup_option")))) {
