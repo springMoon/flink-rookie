@@ -39,7 +39,7 @@ public class SimpleKafkaRecordDeserializationSchema
 
         // makeup MyStringKafkaRecord
         KafkaSimpleStringRecord myRecord = new KafkaSimpleStringRecord(
-                new TopicPartition(record.topic(), record.partition()), offset, key, timestamp, deserializer.deserialize(record.topic(), record.value()));
+                new TopicPartition(record.topic(), record.partition()), offset, key, timestamp, deserializer.deserialize(record.topic(), record.value()), record.headers());
 
         collector.collect(myRecord);
     }
