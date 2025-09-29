@@ -1,6 +1,7 @@
 package com.venn.entity;
 
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.header.Headers;
 
 import java.io.Serializable;
 
@@ -19,14 +20,17 @@ public class KafkaSimpleStringRecord implements Serializable {
     private final long timestamp;
     // record value
     private final String value;
+    // headers
+    private final Headers headers;
 
 
-    public KafkaSimpleStringRecord(TopicPartition tp, long offset, String key, long timestamp, String value) {
+    public KafkaSimpleStringRecord(TopicPartition tp, long offset, String key, long timestamp, String value,Headers headers) {
         this.tp = tp;
         this.offset = offset;
         this.key = key;
         this.timestamp = timestamp;
         this.value = value;
+        this.headers = headers;
     }
 
     public static long getSerialVersionUID() {
@@ -53,6 +57,10 @@ public class KafkaSimpleStringRecord implements Serializable {
         return value;
     }
 
+    public Headers getHeaders() {
+        return headers;
+    }
+
     @Override
     public String toString() {
         return "MyStringKafkaRecord{" +
@@ -60,6 +68,7 @@ public class KafkaSimpleStringRecord implements Serializable {
                 ", offset=" + offset +
                 ", key='" + key + '\'' +
                 ", timestamp=" + timestamp +
+                ", header='" + headers + '\'' +
                 ", value='" + value + '\'' +
                 '}';
     }
