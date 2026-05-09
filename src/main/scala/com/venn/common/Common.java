@@ -29,8 +29,8 @@ public class Common {
             prop.put("auto.offset.reset", "latest");
             prop.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
             prop.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-            prop.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-            prop.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+//            prop.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+//            prop.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
             prop.put("group.id", "venn");
             prop.put("client.id", "venn");
         }

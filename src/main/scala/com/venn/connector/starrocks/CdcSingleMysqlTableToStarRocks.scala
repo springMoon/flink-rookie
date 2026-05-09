@@ -102,8 +102,7 @@ object CdcSingleMysqlTableToStarRocks {
       .build()
 
     // todo, set with start command is better
-    env.setParallelism(1)
-
+//    env.setParallelism(1)
 
     val sink = StarRocksSink.sink(
       // the sink options

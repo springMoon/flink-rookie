@@ -4,8 +4,10 @@ import com.venn.source.mysql.cdc.CommonStringDebeziumDeserializationSchema;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import com.ververica.cdc.connectors.mysql.table.StartupOptions;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -21,25 +23,18 @@ import java.util.Properties;
 public class CdcToStarRocks {
 
     // 每个批次最大条数和等待时间
-    private static int batchSize = 10000;
+    private static int batchSize = 1;
     private static long batchInterval = 10 * 1000;
 
     public static void main(String[] args) throws Exception {
 
-        String ip = "localhost";
+        String ip = "10.1.10.101";
         int port = 3306;
-        String db = "hive_3";
+        String db = "deepexi_daas_inspector";
 //        String table = "venn.user_log,venn.user_log_1";
-        String table = "hive_3.*";
+        String table = "deepexi_daas_inspector.*";
         String user = "root";
-        String pass = "123456";
-
-        String starrocksIp = "10.201.0.230";
-        String starrocksPort = "29030";
-        String starrocksLoadPort = "28030";
-        String starrocksUser = "root";
-        String starrocksPass = "123456";
-        String starrocksDb = "test";
+        String pass = "Mysql^RootsWrf7mK";
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
@@ -51,7 +46,8 @@ public class CdcToStarRocks {
                 .databaseList(db)
                 .tableList(table)
                 .username(user)
-                .password(pass)
+                .password(pass
+                )
                 .startupOptions(StartupOptions.latest())
 //                .startupOptions(StartupOptions.initial())
                 // do not cache schema change
@@ -71,7 +67,20 @@ public class CdcToStarRocks {
                 .process(new CdcStarProcessFunction(batchSize, batchInterval))
                 .name("process")
                 .uid("process")
-                .print();
+                // todo 临时排除表：dct_task
+                .filter(cdcRecords
+                        ->
+                        !cdcRecords.get(0).getTable().equals("qrtz_scheduler_state") &&
+                        !cdcRecords.get(0).getTable().equals("distributed_lock") &&
+                        !cdcRecords.get(0).getTable().equals("blood_adjacency") &&
+                        !cdcRecords.get(0).getTable().equals("blood_info_rel") &&
+                        !cdcRecords.get(0).getTable().equals("ds_task_instance_log") &&
+                        !cdcRecords.get(0).getTable().equals("metadata_table") &&
+                        !cdcRecords.get(0).getTable().equals("data_life_cycle") &&
+                        !cdcRecords.get(0).getTable().equals("lock_info") &&
+                        !cdcRecords.get(0).getTable().equals("blood_attribute_rel")
+                )
+                .print("json: ");
 //                .addSink(new StarRocksSink(starrocksIp, starrocksPort, starrocksLoadPort, starrocksUser, starrocksPass, starrocksDb))
 //                .name("sink");
 

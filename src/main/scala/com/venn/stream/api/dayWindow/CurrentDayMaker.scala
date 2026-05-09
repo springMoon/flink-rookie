@@ -15,10 +15,8 @@ import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 object CurrentDayMaker {
 
-
   var minute : Int = 1
   val calendar: Calendar = Calendar.getInstance()
-
   /**
     * 一天时间比较长，不方便观察，将时间改为当前时间，
     * 每次累加10分钟，这样一天只需要144次循环，也就是144秒

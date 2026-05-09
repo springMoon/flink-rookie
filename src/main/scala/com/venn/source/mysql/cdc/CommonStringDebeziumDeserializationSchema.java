@@ -8,6 +8,8 @@ import org.apache.flink.util.Collector;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 
@@ -16,6 +18,7 @@ import java.math.BigDecimal;
  */
 public class CommonStringDebeziumDeserializationSchema implements DebeziumDeserializationSchema<String> {
 
+    private static final Logger log = LoggerFactory.getLogger(CommonStringDebeziumDeserializationSchema.class);
     private String host;
     private int port;
 
@@ -76,48 +79,53 @@ public class CommonStringDebeziumDeserializationSchema implements DebeziumDeseri
         for (Field field : after.schema().fields()) {
 
             String fieldName = field.name();
-            switch ((field.schema()).type()) {
-                case INT8:
-                    short resultInt8 = after.getInt8(fieldName);
-                    jo.addProperty(fieldName, resultInt8);
-                    break;
-                case INT16:
-                    short resultInt16 = after.getInt16(fieldName);
-                    jo.addProperty(fieldName, resultInt16);
-                    break;
-                case INT32:
-                    int resultInt32 = after.getInt16(fieldName);
-                    jo.addProperty(fieldName, resultInt32);
-                    break;
-                case INT64:
-                    Long resultInt = after.getInt64(fieldName);
-                    jo.addProperty(fieldName, resultInt);
-                    break;
-                case FLOAT32:
-                    Float resultFloat32 = after.getFloat32(fieldName);
-                    jo.addProperty(fieldName, resultFloat32);
-                    break;
-                case FLOAT64:
-                    Double resultFloat64 = after.getFloat64(fieldName);
-                    jo.addProperty(fieldName, resultFloat64);
-                    break;
-                case STRING:
-                    String resultStr = after.getString(fieldName);
-                    jo.addProperty(fieldName, resultStr);
-                    break;
-                case BOOLEAN:
-                    boolean bool = after.getBoolean(fieldName);
-                    jo.addProperty(fieldName, bool);
-                case BYTES:
-                    String value = null;
-                    Object obj = after.get("frealqty");
-                    // todo other Bytes
-                    if (obj instanceof BigDecimal) {
-                        jo.addProperty(fieldName, (BigDecimal) obj);
-                    }
+            try {
+                switch ((field.schema()).type()) {
+                    case INT8:
+                        short resultInt8 = after.getInt8(fieldName);
+                        jo.addProperty(fieldName, resultInt8);
+                        break;
+                    case INT16:
+                        Short resultInt16 = after.getInt16(fieldName);
+                        jo.addProperty(fieldName, resultInt16);
+                        break;
+                    case INT32:
+                        Integer resultInt32 = after.getInt32(fieldName);
+                        jo.addProperty(fieldName, resultInt32);
+                        break;
+                    case INT64:
+                        Long resultInt = after.getInt64(fieldName);
+                        jo.addProperty(fieldName, resultInt);
+                        break;
+                    case FLOAT32:
+                        Float resultFloat32 = after.getFloat32(fieldName);
+                        jo.addProperty(fieldName, resultFloat32);
+                        break;
+                    case FLOAT64:
+                        Double resultFloat64 = after.getFloat64(fieldName);
+                        jo.addProperty(fieldName, resultFloat64);
+                        break;
+                    case STRING:
+                        String resultStr = after.getString(fieldName);
+                        jo.addProperty(fieldName, resultStr);
+                        break;
+                    case BOOLEAN:
+                        boolean bool = after.getBoolean(fieldName);
+                        jo.addProperty(fieldName, bool);
+                    case BYTES:
+                        String value = null;
+                        Object obj = after.get(fieldName);
+                        // todo other Bytes
+                        if (obj instanceof BigDecimal) {
+                            jo.addProperty(fieldName, (BigDecimal) obj);
+                        }
 //                    jo.addProperty(fieldName, obj);
-                    break;
-                default:
+                        break;
+                    default:
+                }
+            } catch (Exception e) {
+                log.info("字段解析错误", e);
+//                e.printStackTrace();
             }
         }
 

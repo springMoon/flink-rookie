@@ -93,7 +93,7 @@ public class CdcStarProcessFunction extends KeyedProcessFunction<String, CdcReco
 
     @Override
     public void onTimer(long timestamp, KeyedProcessFunction<String, CdcRecord, List<CdcRecord>>.OnTimerContext ctx, Collector<List<CdcRecord>> out) throws Exception {
-        LOG.info("{} trigger timer to flush data", ctx.getCurrentKey(), timestamp);
+        LOG.debug("{} trigger timer to flush data", ctx.getCurrentKey(), timestamp);
         // batch interval trigger flush data
         flushData(out);
     }

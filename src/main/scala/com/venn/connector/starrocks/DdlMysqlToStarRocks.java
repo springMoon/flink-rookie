@@ -86,9 +86,11 @@ public class DdlMysqlToStarRocks {
         Connection sinkConnect = DriverManager.getConnection(sinkUrl, sinkUser, sinkPass);
         PreparedStatement ps = sinkConnect.prepareStatement("desc " + sinkDb + "." + sinkTable);
         ResultSet resultSet = ps.executeQuery();
-        if (!resultSet.next()) {
+        if (resultSet.next()) {
             LOG.info("sink table exists, not need create");
             return;
+        } else {
+            LOG.info("sink table not exists, create it");
         }
 
 
@@ -141,7 +143,7 @@ public class DdlMysqlToStarRocks {
     private static String makeUpDdl(TableSchema tableSchema, String keyIndex, String targetTableType, String sinkDb, String sinkTable) {
 
         StringBuilder builder = new StringBuilder();
-        builder.append("create table " + sinkDb + "." + sinkTable + "(").append("\n");
+        builder.append("create table if not exists" + sinkDb + "." + sinkTable + "(").append("\n");
 
         // add column
         for (int i = 0; i < tableSchema.getColumn().size(); i++) {

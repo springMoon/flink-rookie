@@ -103,12 +103,12 @@
             </exclusions>
         </dependency>
         <!--scala batch-->
-        <!-- <dependency>
-             <groupId>org.apache.flink</groupId>
-             <artifactId>flink-scala_${scala.binary.version}</artifactId>
-             <version>${flink.version}</version>
-             <scope>provided</scope>
-         </dependency>-->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-scala_${scala.binary.version}</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <!--flink-json-->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -209,6 +209,7 @@
             <artifactId>flink-connector-mysql-cdc</artifactId>
             <version>${flink.cdc.version}</version>
         </dependency>
+
         <dependency>
             <groupId>it.unimi.dsi</groupId>
             <artifactId>fastutil</artifactId>

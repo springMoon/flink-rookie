@@ -101,9 +101,10 @@ object DynamicWindow {
               countState.clear()
               // process element
               builder.clear()
-              elementState.get().forEach(
-                userLog => builder.append(userLog.getCategoryId).append("-").append(userLog.getItemId).append(",")
-              )
+              // todo
+//              elementState.get().forEach(
+//                userLog => builder.append(userLog.getCategoryId).append("-").append(userLog.getItemId).append(",")
+//              )
               elementState.clear()
               out.collect(ctx.getCurrentKey + " - " + builder.toString())
             }

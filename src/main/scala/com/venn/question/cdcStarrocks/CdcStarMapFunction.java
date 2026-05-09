@@ -23,7 +23,11 @@ public class CdcStarMapFunction extends RichMapFunction<String, CdcRecord> {
     @Override
     public CdcRecord map(String element) throws Exception {
 
-        LOG.info("data : {}", element);
+        // todo
+//        if(element.contains("dct_task")){
+//            LOG.info("element : {}", element);
+//        }
+        LOG.debug("data : {}", element);
         JsonObject object = parser.parse(element).getAsJsonObject();
         String db = object.get("db").getAsString();
         String table = object.get("table").getAsString();

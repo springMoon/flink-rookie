@@ -23,26 +23,24 @@ object CdcDdlTest {
 
     // cdc source
     val source = MySqlSource.builder[String]()
-      .hostname("rm-2ze0qoq964s4nnodi.mysql.rds.aliyuncs.com")
+      .hostname("localhost")
       .port(3306)
-      .username("daas")
-      .password("Dass@2021")
-      .databaseList("dct3_0")
-      .tableList("dct3_0.*")
+      .username("venn")
+      .password("123456")
+      .databaseList("venn")
+      .tableList("t_page_log")
       .serverTimeZone("Asia/Shanghai")
+//      .debeziumProperties()
       // 包含 schema change
       .includeSchemaChanges(true)
       .startupOptions(StartupOptions.latest())
       .deserializer(new DdlDebeziumDeserializationSchema("", 3306))
       .build()
 
-
-
     env.setParallelism(1)
     env.fromSource(source, WatermarkStrategy.noWatermarks[String](), "cdc")
       .map((str: String) => str)
       .print()
-
 
     env.execute("CdcDdlTest")
 

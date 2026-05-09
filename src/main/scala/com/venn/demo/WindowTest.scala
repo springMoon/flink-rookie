@@ -1,16 +1,12 @@
 package com.venn.demo
 
-import java.time.Duration
-import com.google.gson.{JsonObject, JsonParser}
-import com.venn.entity.{Behavior, StreamElement}
-import com.venn.util.DateTimeUtil
-import org.apache.commons.lang3.StringUtils
-import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, TimestampAssignerSupplier, WatermarkStrategy}
+import com.google.gson.JsonParser
+import com.venn.entity.StreamElement
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{RichFilterFunction, RichFlatMapFunction}
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, KafkaSink}
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
 import org.apache.flink.streaming.api.functions.ProcessFunction
