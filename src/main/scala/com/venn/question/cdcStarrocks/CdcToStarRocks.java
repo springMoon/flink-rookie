@@ -32,7 +32,7 @@ public class CdcToStarRocks {
 //        String table = "venn.user_log,venn.user_log_1";
         String table = "hive_3.*";
         String user = "root";
-        String pass = "123456";
+        String pass = "Mysql^RootsWrf7mK";
 
         String starrocksIp = "10.201.0.230";
         String starrocksPort = "29030";
